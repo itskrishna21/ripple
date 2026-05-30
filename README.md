@@ -73,8 +73,10 @@ See `.env.example` for the default local `DATABASE_URL`.
 ```bash
 curl -X POST http://localhost:3000/auth/signup \
   -H "Content-Type: application/json" \
-  -d '{"email":"you@example.com","password":"password123"}'
+  -d '{"email":"you@example.com","password":"password123","companyName":"Acme Inc"}'
 ```
+
+Creates a Firebase user, a company, and links the user as `owner`.
 
 **Sign in**
 
@@ -84,20 +86,23 @@ curl -X POST http://localhost:3000/auth/signin \
   -d '{"email":"you@example.com","password":"password123"}'
 ```
 
+Returns a Firebase ID token, user profile, and company.
+
 ### Competitors
 
 | Method | Path | Auth | Description |
 | --- | --- | --- | --- |
-| `GET` | `/competitors` | No | List all competitors |
-| `POST` | `/competitors` | No | Create a competitor |
-| `PATCH` | `/competitors/:id` | No | Update a competitor |
-| `DELETE` | `/competitors/:id` | No | Delete a competitor |
+| `GET` | `/competitors` | Yes | List competitors for your company |
+| `POST` | `/competitors` | Yes | Create a competitor |
+| `PATCH` | `/competitors/:id` | Yes | Update a competitor |
+| `DELETE` | `/competitors/:id` | Yes | Delete a competitor |
 
 **Create**
 
 ```bash
 curl -X POST http://localhost:3000/competitors \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <firebase-id-token>" \
   -d '{"name":"LanceDB","website":"https://lancedb.ai"}'
 ```
 
@@ -128,7 +133,8 @@ src/
 │       └── signup.ts
 ├── service/
 │   ├── analysisService.ts
-│   └── competitorService.ts
+│   ├── competitorService.ts
+│   └── userService.ts
 ├── schema/                  # Zod validation schemas
 ├── lib/
 │   ├── auth.ts              # Firebase auth helpers
@@ -150,6 +156,70 @@ migrations/                  # SQL migration files
 - **Firebase Auth** — user authentication
 - **Zod** — request validation
 - **Mastra** — AI agent framework
+
+## Data model
+
+Per company, the data hierarchy looks like this:
+
+```mermaid
+erDiagram
+    companies ||--o{ users : has
+    companies ||--o{ competitors : tracks
+    competitors ||--o{ snapshots : has
+    snapshots ||--o{ signals : produces
+    snapshots ||--o| analyses : generates
+
+    companies {
+        uuid id
+        string name
+    }
+    users {
+        uuid id
+        uuid company_id
+        string firebase_uid
+        string email
+    }
+    competitors {
+        uuid id
+        uuid company_id
+        string name
+        string pricing_url
+        string changelog_url
+        string careers_url
+        string blog_url
+    }
+    snapshots {
+        uuid id
+        uuid competitor_id
+        date week_start
+        jsonb sources
+    }
+    signals {
+        uuid id
+        uuid snapshot_id
+        string category
+        string change_type
+        jsonb payload
+    }
+    analyses {
+        uuid id
+        uuid snapshot_id
+        uuid previous_snapshot_id
+        int threat_score
+        jsonb breakdown
+    }
+```
+
+**What this means**
+
+- **Company** is the tenant boundary — competitors, snapshots, and analyses all belong to a company
+- **Users** belong to one company (linked to Firebase)
+- **Competitors** are tracked per company, with user-provided URLs (`pricing_url`, `changelog_url`, `careers_url`, `blog_url`)
+- **Snapshots** are captured weekly per competitor
+- **Signals** are normalized changes extracted when comparing snapshots
+- **Analyses** are the scored output (threat level, breakdown, summary) for a snapshot vs the previous week
+
+Two companies can track the same competitor independently. All API queries are scoped to the authenticated user's company.
 
 ## License
 

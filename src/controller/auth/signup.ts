@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { createUser, UserExistsError } from "../../lib/auth";
+import { signup as createAccount, UserExistsError, toPublicUser } from "../../service/userService";
 import { signupSchema } from "../../schema/signup";
 
 export async function signup(req: Request, res: Response): Promise<void> {
@@ -14,9 +14,12 @@ export async function signup(req: Request, res: Response): Promise<void> {
   }
 
   try {
-    const user = await createUser(parsed.data.email, parsed.data.password);
+    const { user, company } = await createAccount(parsed.data);
 
-    res.status(201).json({ user });
+    res.status(201).json({
+      user: toPublicUser(user),
+      company,
+    });
   } catch (error) {
     if (error instanceof UserExistsError) {
       res.status(409).json({ error: error.message });

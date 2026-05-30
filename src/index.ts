@@ -26,10 +26,10 @@ app.get("/", (req: Request, res: Response) => {
 app.post("/auth/signup", signup);
 app.post("/auth/signin", signin);
 
-app.get("/competitors", getCompetitors);
-app.post("/competitors", createCompetitor);
-app.patch("/competitors/:id", updateCompetitor);
-app.delete("/competitors/:id", deleteCompetitor);
+app.get("/competitors", requireAuth, getCompetitors);
+app.post("/competitors", requireAuth, createCompetitor);
+app.patch("/competitors/:id", requireAuth, updateCompetitor);
+app.delete("/competitors/:id", requireAuth, deleteCompetitor);
 
 app.get("/analysis", requireAuth, getAnalysisOfAllCompetitors);
 app.get("/competitors/:id/analysis", requireAuth, getAnalysisByCompetitorId);

@@ -9,13 +9,20 @@ export async function getAnalysisByCompetitorId(
   req: Request,
   res: Response,
 ): Promise<void> {
+  const companyId = req.user?.companyId;
+
+  if (!companyId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
   const id = req.params.id;
   if (typeof id !== "string") {
     res.status(400).json({ error: "Competitor id is required" });
     return;
   }
 
-  const competitor = await getCompetitorById(id);
+  const competitor = await getCompetitorById(id, companyId);
   if (!competitor) {
     res.status(404).json({ error: "Competitor not found" });
     return;
@@ -27,10 +34,17 @@ export async function getAnalysisByCompetitorId(
 }
 
 export async function getAnalysisOfAllCompetitors(
-  _req: Request,
+  req: Request,
   res: Response,
 ): Promise<void> {
-  const analysis = await getAnalysisForAllCompetitors();
+  const companyId = req.user?.companyId;
+
+  if (!companyId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const analysis = await getAnalysisForAllCompetitors(companyId);
 
   res.status(200).json(analysis);
 }

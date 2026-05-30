@@ -1,17 +1,9 @@
-import { FirebaseAuthError } from "firebase-admin/auth";
-import { getFirebaseAuth } from "./firebase";
-
 export type PublicUser = {
   id: string;
   email: string;
+  role: string;
+  companyId: string;
 };
-
-export class UserExistsError extends Error {
-  constructor() {
-    super("Email already registered");
-    this.name = "UserExistsError";
-  }
-}
 
 type FirebaseSignInResponse = {
   idToken: string;
@@ -34,33 +26,10 @@ function getFirebaseApiKey(): string {
   return apiKey;
 }
 
-export async function createUser(
-  email: string,
-  password: string,
-): Promise<PublicUser> {
-  try {
-    const user = await getFirebaseAuth().createUser({
-      email,
-      password,
-    });
-
-    return {
-      id: user.uid,
-      email: user.email ?? email,
-    };
-  } catch (error) {
-    if (error instanceof FirebaseAuthError && error.code === "auth/email-already-exists") {
-      throw new UserExistsError();
-    }
-
-    throw error;
-  }
-}
-
 export async function signInWithEmailPassword(
   email: string,
   password: string,
-): Promise<{ token: string; user: PublicUser } | null> {
+): Promise<{ token: string; firebaseUid: string; email: string } | null> {
   const response = await fetch(
     `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${getFirebaseApiKey()}`,
     {
@@ -94,9 +63,7 @@ export async function signInWithEmailPassword(
 
   return {
     token: data.idToken,
-    user: {
-      id: data.localId,
-      email: data.email,
-    },
+    firebaseUid: data.localId,
+    email: data.email,
   };
 }

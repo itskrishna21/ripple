@@ -11,11 +11,24 @@ import {
   updateCompetitor as updateCompetitorRecord,
 } from "../service/competitorService";
 
-export async function getCompetitors(
-  _req: Request,
-  res: Response,
-): Promise<void> {
-  const competitors = await listCompetitors();
+function getCompanyId(req: Request, res: Response): string | null {
+  const companyId = req.user?.companyId;
+
+  if (!companyId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return null;
+  }
+
+  return companyId;
+}
+
+export async function getCompetitors(req: Request, res: Response): Promise<void> {
+  const companyId = getCompanyId(req, res);
+  if (!companyId) {
+    return;
+  }
+
+  const competitors = await listCompetitors(companyId);
 
   res.status(200).json(competitors);
 }
@@ -24,6 +37,11 @@ export async function createCompetitor(
   req: Request,
   res: Response,
 ): Promise<void> {
+  const companyId = getCompanyId(req, res);
+  if (!companyId) {
+    return;
+  }
+
   const parsed = createCompetitorSchema.safeParse(req.body);
 
   if (!parsed.success) {
@@ -34,7 +52,7 @@ export async function createCompetitor(
     return;
   }
 
-  const competitor = await createCompetitorRecord(parsed.data);
+  const competitor = await createCompetitorRecord(companyId, parsed.data);
 
   res.status(201).json(competitor);
 }
@@ -43,6 +61,11 @@ export async function updateCompetitor(
   req: Request,
   res: Response,
 ): Promise<void> {
+  const companyId = getCompanyId(req, res);
+  if (!companyId) {
+    return;
+  }
+
   const parsed = updateCompetitorSchema.safeParse(req.body);
 
   if (!parsed.success) {
@@ -60,7 +83,7 @@ export async function updateCompetitor(
   }
 
   try {
-    const competitor = await updateCompetitorRecord(id, parsed.data);
+    const competitor = await updateCompetitorRecord(id, companyId, parsed.data);
 
     res.status(200).json(competitor);
   } catch (error) {
@@ -77,6 +100,11 @@ export async function deleteCompetitor(
   req: Request,
   res: Response,
 ): Promise<void> {
+  const companyId = getCompanyId(req, res);
+  if (!companyId) {
+    return;
+  }
+
   const id = req.params.id;
   if (typeof id !== "string") {
     res.status(400).json({ error: "Competitor id is required" });
@@ -84,7 +112,7 @@ export async function deleteCompetitor(
   }
 
   try {
-    const competitor = await deleteCompetitorRecord(id);
+    const competitor = await deleteCompetitorRecord(id, companyId);
 
     res.status(200).json(competitor);
   } catch (error) {

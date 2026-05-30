@@ -14,8 +14,10 @@ export async function getAnalysisByCompetitorId(
   };
 }
 
-export async function getAnalysisForAllCompetitors(): Promise<Analysis[]> {
-  const competitors = await getCompetitors();
+export async function getAnalysisForAllCompetitors(
+  companyId: string,
+): Promise<Analysis[]> {
+  const competitors = await getCompetitors(companyId);
 
   return Promise.all(
     competitors.map((competitor) =>
