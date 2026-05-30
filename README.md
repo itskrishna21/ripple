@@ -103,7 +103,14 @@ Returns a Firebase ID token, user profile, and company.
 curl -X POST http://localhost:3000/competitors \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <firebase-id-token>" \
-  -d '{"name":"LanceDB","website":"https://lancedb.ai"}'
+  -d '{
+    "name": "LanceDB",
+    "website": "https://lancedb.ai",
+    "pricingUrl": "https://lancedb.ai/pricing",
+    "changelogUrl": "https://lancedb.ai/docs/changelog",
+    "careersUrl": "https://jobs.ashbyhq.com/lancedb",
+    "blogUrl": "https://lancedb.ai/blog"
+  }'
 ```
 
 ### Analysis
@@ -134,13 +141,17 @@ src/
 ├── service/
 │   ├── analysisService.ts
 │   ├── competitorService.ts
+│   ├── snapshotService.ts
 │   └── userService.ts
 ├── schema/                  # Zod validation schemas
+│   ├── competitor.ts
+│   └── snapshot.ts
 ├── lib/
 │   ├── auth.ts              # Firebase auth helpers
 │   ├── db.ts                # PostgreSQL connection pool
 │   ├── firebase.ts          # Firebase Admin SDK
-│   └── migrate.ts           # Database migrations
+│   ├── migrate.ts           # Database migrations
+│   └── week.ts              # Weekly snapshot boundaries
 ├── middleware/
 │   └── auth.ts              # Firebase token verification
 └── types/

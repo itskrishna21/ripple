@@ -8,13 +8,31 @@ export type Competitor = {
   id: string;
   name: string;
   website?: string;
+  pricingUrl?: string;
+  changelogUrl?: string;
+  careersUrl?: string;
+  blogUrl?: string;
 };
 
 type CompetitorRow = {
   id: string;
   name: string;
   website: string | null;
+  pricing_url: string | null;
+  changelog_url: string | null;
+  careers_url: string | null;
+  blog_url: string | null;
 };
+
+const competitorColumns = `
+  id,
+  name,
+  website,
+  pricing_url,
+  changelog_url,
+  careers_url,
+  blog_url
+`;
 
 export class CompetitorNotFoundError extends Error {
   constructor() {
@@ -28,6 +46,10 @@ function rowToCompetitor(row: CompetitorRow): Competitor {
     id: row.id,
     name: row.name,
     ...(row.website ? { website: row.website } : {}),
+    ...(row.pricing_url ? { pricingUrl: row.pricing_url } : {}),
+    ...(row.changelog_url ? { changelogUrl: row.changelog_url } : {}),
+    ...(row.careers_url ? { careersUrl: row.careers_url } : {}),
+    ...(row.blog_url ? { blogUrl: row.blog_url } : {}),
   };
 }
 
@@ -37,7 +59,7 @@ export async function getCompetitorById(
 ): Promise<Competitor | null> {
   const result = await pool.query<CompetitorRow>(
     `
-      SELECT id, name, website
+      SELECT ${competitorColumns}
       FROM competitors
       WHERE id = $1 AND company_id = $2
     `,
@@ -51,7 +73,7 @@ export async function getCompetitorById(
 export async function getCompetitors(companyId: string): Promise<Competitor[]> {
   const result = await pool.query<CompetitorRow>(
     `
-      SELECT id, name, website
+      SELECT ${competitorColumns}
       FROM competitors
       WHERE company_id = $1
       ORDER BY created_at DESC
@@ -68,11 +90,27 @@ export async function createCompetitor(
 ): Promise<Competitor> {
   const result = await pool.query<CompetitorRow>(
     `
-      INSERT INTO competitors (company_id, name, website)
-      VALUES ($1, $2, $3)
-      RETURNING id, name, website
+      INSERT INTO competitors (
+        company_id,
+        name,
+        website,
+        pricing_url,
+        changelog_url,
+        careers_url,
+        blog_url
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING ${competitorColumns}
     `,
-    [companyId, input.name, input.website ?? null],
+    [
+      companyId,
+      input.name,
+      input.website ?? null,
+      input.pricingUrl ?? null,
+      input.changelogUrl ?? null,
+      input.careersUrl ?? null,
+      input.blogUrl ?? null,
+    ],
   );
 
   const row = result.rows[0];
@@ -94,18 +132,29 @@ export async function updateCompetitor(
     throw new CompetitorNotFoundError();
   }
 
-  const name = input.name ?? existing.name;
-  const website =
-    input.website !== undefined ? input.website : existing.website;
-
   const result = await pool.query<CompetitorRow>(
     `
       UPDATE competitors
-      SET name = $3, website = $4
+      SET
+        name = $3,
+        website = $4,
+        pricing_url = $5,
+        changelog_url = $6,
+        careers_url = $7,
+        blog_url = $8
       WHERE id = $1 AND company_id = $2
-      RETURNING id, name, website
+      RETURNING ${competitorColumns}
     `,
-    [id, companyId, name, website ?? null],
+    [
+      id,
+      companyId,
+      input.name ?? existing.name,
+      input.website !== undefined ? input.website : existing.website ?? null,
+      input.pricingUrl ?? existing.pricingUrl ?? null,
+      input.changelogUrl ?? existing.changelogUrl ?? null,
+      input.careersUrl ?? existing.careersUrl ?? null,
+      input.blogUrl ?? existing.blogUrl ?? null,
+    ],
   );
 
   const row = result.rows[0];
@@ -124,7 +173,7 @@ export async function deleteCompetitor(
     `
       DELETE FROM competitors
       WHERE id = $1 AND company_id = $2
-      RETURNING id, name, website
+      RETURNING ${competitorColumns}
     `,
     [id, companyId],
   );
