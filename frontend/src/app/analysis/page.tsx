@@ -16,7 +16,7 @@ export default function AnalysisPage() {
 
   const sorted = [...data].sort(
     (a, b) =>
-      (b.analysis?.threat_score ?? -1) - (a.analysis?.threat_score ?? -1),
+      (b.analysis?.threatScore ?? -1) - (a.analysis?.threatScore ?? -1),
   );
 
   return (
@@ -58,15 +58,15 @@ export default function AnalysisPage() {
                   </td>
                   <td className="px-4 py-3">
                     {analysis ? (
-                      <ThreatBadge score={analysis.threat_score} />
+                      <ThreatBadge score={analysis.threatScore} />
                     ) : (
                       <span className="text-xs text-zinc-600">No data</span>
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    {analysis && Object.keys(analysis.score_breakdown).length > 0 ? (
+                    {analysis && Object.keys(analysis.scoreBreakdown).length > 0 ? (
                       <div className="flex gap-1 flex-wrap">
-                        {Object.entries(analysis.score_breakdown)
+                        {Object.entries(analysis.scoreBreakdown)
                           .sort(([, a], [, b]) => b - a)
                           .slice(0, 2)
                           .map(([cat, pts]) => (
@@ -81,7 +81,7 @@ export default function AnalysisPage() {
                   </td>
                   <td className="px-4 py-3 text-xs text-zinc-500 tabular-nums">
                     {analysis
-                      ? new Date(analysis.created_at).toLocaleDateString("en-US", {
+                      ? new Date(analysis.createdAt).toLocaleDateString("en-US", {
                           month: "short",
                           day: "numeric",
                         })

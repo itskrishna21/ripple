@@ -56,7 +56,7 @@ function StatCard({ label, value, icon: Icon, sub }: {
 
 function CompetitorCard({ item }: { item: CompetitorAnalysis }) {
   const { competitor, analysis } = item;
-  const score = analysis?.threat_score ?? null;
+  const score = analysis?.threatScore ?? null;
 
   return (
     <Link href={`/competitors/${competitor.id}`}>
@@ -65,7 +65,7 @@ function CompetitorCard({ item }: { item: CompetitorAnalysis }) {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <h3 className="text-sm font-medium text-white truncate">{competitor.name}</h3>
-              {analysis?.is_baseline && (
+                {analysis?.isBaseline && (
                 <Badge variant="muted">baseline</Badge>
               )}
             </div>
@@ -77,9 +77,9 @@ function CompetitorCard({ item }: { item: CompetitorAnalysis }) {
                   {analysis.summary}
                 </p>
                 <div className="flex items-center gap-3 mt-3">
-                  <ThreatBadge score={analysis.threat_score} />
+                  <ThreatBadge score={analysis.threatScore} />
                   <span className="text-xs text-zinc-600">
-                    {new Date(analysis.created_at).toLocaleDateString("en-US", {
+                    {new Date(analysis.createdAt).toLocaleDateString("en-US", {
                       month: "short",
                       day: "numeric",
                     })}
@@ -123,11 +123,11 @@ export default function DashboardPage() {
   const avgScore =
     withAnalysis.length > 0
       ? Math.round(
-          withAnalysis.reduce((s, a) => s + (a.analysis?.threat_score ?? 0), 0) /
+          withAnalysis.reduce((s, a) => s + (a.analysis?.threatScore ?? 0), 0) /
             withAnalysis.length,
         )
       : 0;
-  const high = withAnalysis.filter((a) => (a.analysis?.threat_score ?? 0) >= 60).length;
+  const high = withAnalysis.filter((a) => (a.analysis?.threatScore ?? 0) >= 60).length;
 
   return (
     <AppShell>

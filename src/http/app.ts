@@ -1,4 +1,5 @@
 import express, { Request, Response } from "express";
+import cors from "cors";
 import {
   getAnalysisByCompetitorId,
   getAnalysisOfAllCompetitors,
@@ -24,6 +25,7 @@ import { pool } from "../lib/db";
 export function buildApp() {
   const app = express();
 
+  app.use(cors({ origin: process.env.CORS_ORIGIN ?? "http://localhost:3001", credentials: true }));
   app.use(express.json());
 
   // Health: process is up (no DB check — load balancer uses this)

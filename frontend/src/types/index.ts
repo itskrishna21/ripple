@@ -12,8 +12,8 @@ export type Competitor = {
 
 export type Signal = {
   id: string;
-  snapshot_id: string;
-  source_key: SourceKey;
+  snapshotId: string;
+  sourceKey: SourceKey;
   category:
     | "pricing_change"
     | "new_feature"
@@ -22,27 +22,32 @@ export type Signal = {
     | "funding_or_news"
     | "messaging_change"
     | "other";
-  change_type: "added" | "removed" | "modified";
+  changeType: "added" | "removed" | "modified";
   severity: 1 | 2 | 3 | 4 | 5;
   payload: Record<string, unknown>;
-  created_at: string;
+  createdAt: string;
 };
 
+// Shape returned by the API (camelCase)
 export type Analysis = {
   id: string;
-  snapshot_id: string;
-  previous_snapshot_id: string | null;
-  threat_score: number;
-  score_breakdown: Record<string, number>;
+  snapshotId: string;
+  previousSnapshotId: string | null;
+  competitorId: string;
+  weekStart: string;
+  threatScore: number;
+  scoreBreakdown: Record<string, number>;
   summary: string;
   model: string;
-  prompt_version: string;
-  policy_version: string;
-  is_baseline: boolean;
-  created_at: string;
+  promptVersion: string;
+  policyVersion: string;
+  isBaseline: boolean;
+  createdAt: string;
+  updatedAt: string;
   signals?: Signal[];
 };
 
+// Client-side joined shape for dashboard/list views
 export type CompetitorAnalysis = {
   competitor: Competitor;
   analysis: Analysis | null;

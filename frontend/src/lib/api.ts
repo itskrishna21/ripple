@@ -44,36 +44,47 @@ export async function apiSignup(email: string, password: string, companyName: st
   return res.json();
 }
 
-// Competitors
+// Competitors — API returns arrays/objects directly (no wrapper)
 export const getCompetitors = () =>
-  request<{ competitors: import("@/types").Competitor[] }>("/competitors").then(
-    (r) => r.competitors,
-  );
+  request<import("@/types").Competitor[]>("/competitors");
 
 export const createCompetitor = (data: {
   name: string;
   website: string;
   sources: Record<string, string>;
-}) => request<{ competitor: import("@/types").Competitor }>("/competitors", {
+}) => request<import("@/types").Competitor>("/competitors", {
   method: "POST",
   body: JSON.stringify(data),
-}).then((r) => r.competitor);
+});
 
 export const updateCompetitor = (
   id: string,
   data: { name?: string; website?: string; sources?: Record<string, string> },
 ) =>
-  request<{ competitor: import("@/types").Competitor }>(`/competitors/${id}`, {
+  request<import("@/types").Competitor>(`/competitors/${id}`, {
     method: "PATCH",
     body: JSON.stringify(data),
-  }).then((r) => r.competitor);
+  });
 
 export const deleteCompetitor = (id: string) =>
   request<void>(`/competitors/${id}`, { method: "DELETE" });
 
 // Analysis
-export const getAllAnalyses = () =>
-  request<import("@/types").CompetitorAnalysis[]>("/analysis");
+// /analysis returns Analysis[] (one per competitor); we join with competitors client-side
+export const getAnalyses = () =>
+  request<import("@/types").Analysis[]>("/analysis");
+
+export async function getAllAnalyses(): Promise<import("@/types").CompetitorAnalysis[]> {
+  const [competitors, analyses] = await Promise.all([
+    getCompetitors(),
+    getAnalyses(),
+  ]);
+  const byCompetitorId = new Map(analyses.map((a) => [a.competitorId, a]));
+  return competitors.map((c) => ({
+    competitor: c,
+    analysis: byCompetitorId.get(c.id) ?? null,
+  }));
+}
 
 export const getCompetitorAnalysis = (id: string) =>
   request<import("@/types").Analysis>(`/competitors/${id}/analysis`);

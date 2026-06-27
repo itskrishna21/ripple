@@ -59,17 +59,17 @@ function SignalRow({ signal }: { signal: Signal }) {
           <span className="text-xs font-medium text-white">
             {categoryLabel[signal.category] ?? signal.category}
           </span>
-          <Badge variant="muted">{signal.source_key}</Badge>
+          <Badge variant="muted">{signal.sourceKey}</Badge>
           <Badge
             variant={
-              signal.change_type === "added"
+              signal.changeType === "added"
                 ? "success"
-                : signal.change_type === "removed"
+                : signal.changeType === "removed"
                 ? "danger"
                 : "warning"
             }
           >
-            {signal.change_type}
+            {signal.changeType}
           </Badge>
           <span className={cn("text-xs font-mono ml-auto", severityColor(signal.severity))}>
             sev {signal.severity}/5
@@ -159,22 +159,22 @@ export default function CompetitorDetailPage() {
                 {competitor?.name ?? "Competitor"}
               </h1>
               <p className="text-xs text-zinc-500 mt-0.5">
-                {competitor?.website} · Analyzed{" "}
-                {new Date(analysis.created_at).toLocaleDateString("en-US", {
+              {competitor?.website} · Analyzed{" "}
+              {new Date(analysis.createdAt).toLocaleDateString("en-US", {
                   month: "long",
                   day: "numeric",
                   year: "numeric",
                 })}
               </p>
             </div>
-            <ThreatBadge score={analysis.threat_score} />
+            <ThreatBadge score={analysis.threatScore} />
           </div>
 
           {/* Summary */}
           <Card>
             <CardHeader>
               <CardTitle>Summary</CardTitle>
-              {analysis.is_baseline && (
+              {analysis.isBaseline && (
                 <CardDescription>Baseline snapshot — no previous data to compare.</CardDescription>
               )}
             </CardHeader>
@@ -182,13 +182,13 @@ export default function CompetitorDetailPage() {
           </Card>
 
           {/* Score breakdown */}
-          {Object.keys(analysis.score_breakdown).length > 0 && (
+          {Object.keys(analysis.scoreBreakdown).length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle>Score Breakdown</CardTitle>
-                <CardDescription>Threat score = {analysis.threat_score} / 100</CardDescription>
+                <CardDescription>Threat score = {analysis.threatScore} / 100</CardDescription>
               </CardHeader>
-              <ScoreBreakdown breakdown={analysis.score_breakdown} />
+              <ScoreBreakdown breakdown={analysis.scoreBreakdown} />
             </Card>
           )}
 
@@ -216,9 +216,9 @@ export default function CompetitorDetailPage() {
           {/* Meta */}
           <div className="flex gap-2 flex-wrap">
             <Badge variant="muted">model: {analysis.model}</Badge>
-            <Badge variant="muted">prompt v{analysis.prompt_version}</Badge>
-            <Badge variant="muted">policy v{analysis.policy_version}</Badge>
-            {analysis.is_baseline && <Badge variant="muted">baseline</Badge>}
+            <Badge variant="muted">prompt v{analysis.promptVersion}</Badge>
+            <Badge variant="muted">policy v{analysis.policyVersion}</Badge>
+            {analysis.isBaseline && <Badge variant="muted">baseline</Badge>}
           </div>
         </div>
       )}
