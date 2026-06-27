@@ -4,4 +4,9 @@ dist/
 .env
 .env.*
 !.env.example
+!.env.test
 .DS_Store
+# Service account / credential JSON files — never commit these
+*-firebase-adminsdk-*.json
+*-credentials.json
+*-service-account.json

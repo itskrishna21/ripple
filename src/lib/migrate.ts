@@ -69,9 +69,6 @@ export async function runMigrations(): Promise<void> {
 
 // Allow running directly as a deploy step: `npm run migrate`
 if (require.main === module) {
-  // Config must be loaded before pool is used
-  require("../config");
-
   runMigrations()
     .then(async () => {
       await pool.end();

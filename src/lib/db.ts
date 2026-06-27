@@ -1,16 +1,8 @@
 import { Pool } from "pg";
-
-function getRequiredEnv(name: string): string {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(`${name} is not configured`);
-  }
-
-  return value;
-}
+import { config } from "../config";
 
 export const pool = new Pool({
-  connectionString: getRequiredEnv("DATABASE_URL"),
+  connectionString: config.DATABASE_URL,
 });
 
 export async function closePool(): Promise<void> {
