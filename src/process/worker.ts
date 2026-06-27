@@ -10,19 +10,7 @@ import {
 } from "../queue/jobs";
 import { handleSnapshotStart } from "../pipeline/snapshotStart";
 import { handleFetchSource } from "../pipeline/fetchSource";
-import type { Job } from "pg-boss";
-
-// analyze.snapshot handler — implemented in Phase 4 (Intelligence PR).
-async function handleAnalyzeSnapshot(
-  jobs: Job<AnalyzeSnapshotJob>[],
-): Promise<void> {
-  for (const job of jobs) {
-    logger.info(
-      { jobId: job.id, snapshotId: job.data.snapshotId },
-      "analyze.snapshot received (Phase 4 stub)",
-    );
-  }
-}
+import { handleAnalyzeSnapshot } from "../pipeline/analyzeSnapshot";
 
 // ---------------------------------------------------------------------------
 // Bootstrap

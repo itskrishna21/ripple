@@ -26,6 +26,10 @@ const schema = z.object({
   REAPER_STUCK_THRESHOLD_MIN: z.coerce.number().default(30),
 
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
+
+  // LLM (optional — needed for analyze.snapshot; worker will skip LLM if absent)
+  LLM_API_KEY: z.string().default(""),
+  LLM_MODEL: z.string().default("gpt-4o-mini"),
 });
 
 function parseConfig() {
