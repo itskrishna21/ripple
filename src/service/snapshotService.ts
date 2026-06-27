@@ -6,7 +6,10 @@ import {
   SnapshotStatus,
   createEmptySources,
 } from "../schema/snapshot";
-import { CompetitorNotFoundError, getCompetitorById } from "./competitorService";
+import { CompetitorNotFoundError, SnapshotNotFoundError } from "../http/errors";
+import { getCompetitorById } from "./competitorService";
+
+export { SnapshotNotFoundError };
 
 type SnapshotRow = {
   id: string;
@@ -17,13 +20,6 @@ type SnapshotRow = {
   created_at: Date;
   updated_at: Date;
 };
-
-export class SnapshotNotFoundError extends Error {
-  constructor() {
-    super("Snapshot not found");
-    this.name = "SnapshotNotFoundError";
-  }
-}
 
 function rowToSnapshot(row: SnapshotRow): CompetitorSnapshot {
   return {

@@ -28,7 +28,6 @@
     "dotenv": "^17.4.2",
     "esbuild": "^0.28.0",
     "express": "^5.2.1",
-    "expresss": "^0.0.0",
     "firebase-admin": "^13.10.0",
     "pg": "^8.21.0",
     "undici-types": "^7.24.6",

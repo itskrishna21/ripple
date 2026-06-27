@@ -1,10 +1,15 @@
-import "dotenv/config";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import { PoolClient } from "pg";
 import { pool } from "./db";
+import { logger } from "./logger";
 
-async function ensureMigrationsTable(): Promise<void> {
-  await pool.query(`
+// Arbitrary stable integer used as the Postgres advisory lock key so that only
+// one process applies migrations at a time (safe for multi-replica deploys).
+const MIGRATION_LOCK_ID = 5_432_000;
+
+async function ensureMigrationsTable(client: PoolClient): Promise<void> {
+  await client.query(`
     CREATE TABLE IF NOT EXISTS schema_migrations (
       id TEXT PRIMARY KEY,
       applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -12,57 +17,68 @@ async function ensureMigrationsTable(): Promise<void> {
   `);
 }
 
-async function hasMigration(id: string): Promise<boolean> {
-  const result = await pool.query(
-    "SELECT id FROM schema_migrations WHERE id = $1",
-    [id],
+async function getAppliedMigrations(client: PoolClient): Promise<Set<string>> {
+  const result = await client.query<{ id: string }>(
+    "SELECT id FROM schema_migrations",
   );
-
-  return result.rowCount === 1;
+  return new Set(result.rows.map((r) => r.id));
 }
 
-async function applyMigration(id: string, sql: string): Promise<void> {
-  const client = await pool.connect();
-
+async function applyMigration(
+  client: PoolClient,
+  id: string,
+  sql: string,
+): Promise<void> {
+  await client.query("BEGIN");
   try {
-    await client.query("BEGIN");
     await client.query(sql);
     await client.query("INSERT INTO schema_migrations (id) VALUES ($1)", [id]);
     await client.query("COMMIT");
+    logger.info({ migration: id }, "migration applied");
   } catch (error) {
     await client.query("ROLLBACK");
     throw error;
-  } finally {
-    client.release();
   }
 }
 
 export async function runMigrations(): Promise<void> {
-  await ensureMigrationsTable();
+  const client = await pool.connect();
+  try {
+    await client.query("SELECT pg_advisory_lock($1)", [MIGRATION_LOCK_ID]);
+    await ensureMigrationsTable(client);
 
-  const migrationsDir = join(process.cwd(), "migrations");
-  const files = readdirSync(migrationsDir)
-    .filter((file) => file.endsWith(".sql"))
-    .sort();
+    const migrationsDir = join(process.cwd(), "migrations");
+    const files = readdirSync(migrationsDir)
+      .filter((f) => f.endsWith(".sql"))
+      .sort();
 
-  for (const file of files) {
-    if (await hasMigration(file)) {
-      continue;
+    const applied = await getAppliedMigrations(client);
+
+    for (const file of files) {
+      if (applied.has(file)) continue;
+      const sql = readFileSync(join(migrationsDir, file), "utf8");
+      await applyMigration(client, file, sql);
     }
-
-    const sql = readFileSync(join(migrationsDir, file), "utf8");
-    await applyMigration(file, sql);
+  } finally {
+    await client
+      .query("SELECT pg_advisory_unlock($1)", [MIGRATION_LOCK_ID])
+      .catch(() => undefined);
+    client.release();
   }
 }
 
+// Allow running directly as a deploy step: `npm run migrate`
 if (require.main === module) {
+  // Config must be loaded before pool is used
+  require("../config");
+
   runMigrations()
     .then(async () => {
       await pool.end();
-      console.log("Migrations complete");
+      logger.info({}, "migrations complete");
     })
     .catch(async (error) => {
-      console.error(error);
+      logger.error({ err: error }, "migrations failed");
       await pool.end();
       process.exit(1);
     });

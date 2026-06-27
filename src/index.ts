@@ -1,48 +1,28 @@
-import "dotenv/config";
-import express, { Request, Response } from "express";
-import {
-  getAnalysisByCompetitorId,
-  getAnalysisOfAllCompetitors,
-} from "./controller/analysis";
-import { signin } from "./controller/auth/signin";
-import { signup } from "./controller/auth/signup";
-import {
-  createCompetitor,
-  deleteCompetitor,
-  getCompetitors,
-  updateCompetitor,
-} from "./controller/competitor";
-import { runMigrations } from "./lib/migrate";
-import { requireAuth } from "./middleware/auth";
+import { config } from "./config"; // fail fast on bad env before anything else
+import { buildApp } from "./http/app";
+import { logger } from "./lib/logger";
+import { pool } from "./lib/db";
 
-const app = express();
-
-app.use(express.json());
-
-app.get("/", (req: Request, res: Response) => {
-  res.send("Hello World");
-});
-
-app.post("/auth/signup", signup);
-app.post("/auth/signin", signin);
-
-app.get("/competitors", requireAuth, getCompetitors);
-app.post("/competitors", requireAuth, createCompetitor);
-app.patch("/competitors/:id", requireAuth, updateCompetitor);
-app.delete("/competitors/:id", requireAuth, deleteCompetitor);
-
-app.get("/analysis", requireAuth, getAnalysisOfAllCompetitors);
-app.get("/competitors/:id/analysis", requireAuth, getAnalysisByCompetitorId);
-
-async function start(): Promise<void> {
-  await runMigrations();
-
-  app.listen(3000, () => {
-    console.log("Server is running on port 3000");
+async function startWeb(): Promise<void> {
+  const app = buildApp();
+  const server = app.listen(config.PORT, () => {
+    logger.info({ port: config.PORT }, "server started");
   });
+
+  async function shutdown(signal: string): Promise<void> {
+    logger.info({ signal }, "shutdown signal received");
+    server.close(async () => {
+      await pool.end();
+      logger.info({}, "server closed");
+      process.exit(0);
+    });
+  }
+
+  process.on("SIGTERM", () => void shutdown("SIGTERM"));
+  process.on("SIGINT", () => void shutdown("SIGINT"));
 }
 
-start().catch((error) => {
-  console.error(error);
+startWeb().catch((err) => {
+  logger.error({ err }, "failed to start");
   process.exit(1);
 });

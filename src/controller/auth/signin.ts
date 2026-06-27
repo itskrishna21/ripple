@@ -1,50 +1,20 @@
 import { Request, Response } from "express";
+import { UnauthorizedError } from "../../http/errors";
 import { signInWithEmailPassword } from "../../lib/auth";
 import { signinSchema } from "../../schema/signin";
-import {
-  getCompanyById,
-  getUserByFirebaseUid,
-  toPublicUser,
-} from "../../service/userService";
+import { getCompanyById, getUserByFirebaseUid, toPublicUser } from "../../service/userService";
 
 export async function signin(req: Request, res: Response): Promise<void> {
-  const parsed = signinSchema.safeParse(req.body);
+  const parsed = signinSchema.parse(req.body); // validate middleware ran first
 
-  if (!parsed.success) {
-    res.status(400).json({
-      error: "Invalid request",
-      details: parsed.error.flatten(),
-    });
-    return;
-  }
-
-  const result = await signInWithEmailPassword(
-    parsed.data.email,
-    parsed.data.password,
-  );
-
-  if (!result) {
-    res.status(401).json({ error: "Invalid email or password" });
-    return;
-  }
+  const result = await signInWithEmailPassword(parsed.email, parsed.password);
+  if (!result) throw new UnauthorizedError("Invalid email or password");
 
   const user = await getUserByFirebaseUid(result.firebaseUid);
-
-  if (!user) {
-    res.status(401).json({ error: "User not registered" });
-    return;
-  }
+  if (!user) throw new UnauthorizedError("User not registered");
 
   const company = await getCompanyById(user.companyId);
+  if (!company) throw new Error("Company record missing for registered user");
 
-  if (!company) {
-    res.status(500).json({ error: "Company not found" });
-    return;
-  }
-
-  res.status(200).json({
-    token: result.token,
-    user: toPublicUser(user),
-    company,
-  });
+  res.status(200).json({ token: result.token, user: toPublicUser(user), company });
 }

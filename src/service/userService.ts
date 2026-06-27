@@ -1,7 +1,10 @@
 import { FirebaseAuthError } from "firebase-admin/auth";
+import { UserExistsError } from "../http/errors";
 import { pool } from "../lib/db";
 import { getFirebaseAuth } from "../lib/firebase";
 import { SignupInput } from "../schema/signup";
+
+export { UserExistsError };
 
 export type Company = {
   id: string;
@@ -15,13 +18,6 @@ export type User = {
   email: string;
   role: string;
 };
-
-export class UserExistsError extends Error {
-  constructor() {
-    super("Email already registered");
-    this.name = "UserExistsError";
-  }
-}
 
 type CompanyRow = {
   id: string;

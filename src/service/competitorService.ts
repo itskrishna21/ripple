@@ -2,7 +2,10 @@ import {
   CreateCompetitorInput,
   UpdateCompetitorInput,
 } from "../schema/competitor";
+import { CompetitorNotFoundError } from "../http/errors";
 import { pool } from "../lib/db";
+
+export { CompetitorNotFoundError };
 
 export type Competitor = {
   id: string;
@@ -33,13 +36,6 @@ const competitorColumns = `
   careers_url,
   blog_url
 `;
-
-export class CompetitorNotFoundError extends Error {
-  constructor() {
-    super("Competitor not found");
-    this.name = "CompetitorNotFoundError";
-  }
-}
 
 function rowToCompetitor(row: CompetitorRow): Competitor {
   return {
