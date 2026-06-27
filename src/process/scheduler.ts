@@ -29,14 +29,9 @@ export async function runWeeklyEnqueue(): Promise<void> {
   log.info({ enqueued }, "weekly enqueue complete");
 }
 
-// ---------------------------------------------------------------------------
-// Reaper (stub — Phase 5 fills in src/pipeline/reaper.ts)
-// ---------------------------------------------------------------------------
-
-async function runReaper(): Promise<void> {
-  logger.info({}, "reaper tick");
-  // TODO: Phase 5 — import and call runReaper() from src/pipeline/reaper.ts
-}
+// Reaper is imported here; the function itself lives in pipeline/reaper.ts
+// so it can be unit-tested without bringing up the full scheduler.
+import { runReaper } from "../pipeline/reaper";
 
 // ---------------------------------------------------------------------------
 // Bootstrap

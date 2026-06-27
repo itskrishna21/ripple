@@ -28,18 +28,22 @@ afterAll(async () => {
 // ---------------------------------------------------------------------------
 
 describe("GET /health", () => {
-  it("returns 200 ok — no DB required", async () => {
+  it("returns 200 ok with uptime — no DB required", async () => {
     const res = await request(app).get("/health");
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ status: "ok" });
+    expect(res.body).toMatchObject({ status: "ok" });
+    expect(typeof res.body.uptime).toBe("number");
   });
 });
 
 describe("GET /ready", () => {
-  it("returns 200 when DB is reachable", async () => {
+  it("returns 200 with queue depths and snapshot summary when DB is reachable", async () => {
     const res = await request(app).get("/ready");
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ status: "ready" });
+    expect(res.body).toMatchObject({ status: "ready", db: "ok" });
+    expect(typeof res.body.stuckSnapshots).toBe("number");
+    expect(res.body.queueDepths).toBeDefined();
+    expect(res.body.snapshots24h).toBeDefined();
   });
 });
 
