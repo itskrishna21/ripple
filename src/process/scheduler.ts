@@ -9,7 +9,7 @@ import { enqueueSnapshotStart } from "../queue/publish";
 // Weekly snapshot fan-out
 // ---------------------------------------------------------------------------
 
-async function runWeeklyEnqueue(): Promise<void> {
+export async function runWeeklyEnqueue(): Promise<void> {
   const weekStart = getWeekStart();
   const log = logger.child({ weekStart });
   log.info({}, "weekly enqueue starting");
