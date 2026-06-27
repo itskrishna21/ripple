@@ -13,7 +13,15 @@ export type SnapshotSources = {
   blog?: SnapshotSource;
 };
 
-export type SnapshotStatus = "pending" | "completed" | "partial" | "failed";
+// "fetching" and "analyzing" are in-flight states set by pipeline workers.
+export type SnapshotStatus =
+  | "pending"
+  | "fetching"
+  | "completed"
+  | "partial"
+  | "analyzing"
+  | "analyzed"
+  | "failed";
 
 export type CompetitorSnapshot = {
   id: string;

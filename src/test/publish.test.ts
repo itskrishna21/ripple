@@ -103,7 +103,7 @@ describe("publish helpers", () => {
       const snapId = `helper-fetch-${RUN}`;
       await enqueueFetchSource({
         snapshotId: snapId, competitorId: COMP_ID,
-        sourceKey: "website", url: "https://example.com",
+        sourceKey: "pricing", url: "https://example.com",
       });
       const { rows } = await pool.query<{ data: { snapshotId: string; sourceKey: string } }>(
         `SELECT data FROM pgboss.job
@@ -111,7 +111,7 @@ describe("publish helpers", () => {
         [QUEUES.fetchSource, snapId],
       );
       expect(rows.length).toBe(1);
-      expect(rows[0]!.data.sourceKey).toBe("website");
+      expect(rows[0]!.data.sourceKey).toBe("pricing");
     });
   });
 

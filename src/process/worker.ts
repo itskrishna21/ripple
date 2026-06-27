@@ -1,4 +1,3 @@
-import type { Job } from "pg-boss";
 import { config } from "../config";
 import { pool } from "../lib/db";
 import { logger } from "../lib/logger";
@@ -9,32 +8,19 @@ import {
   QUEUES,
   SnapshotStartJob,
 } from "../queue/jobs";
+import { handleSnapshotStart } from "../pipeline/snapshotStart";
+import { handleFetchSource } from "../pipeline/fetchSource";
+import type { Job } from "pg-boss";
 
-// ---------------------------------------------------------------------------
-// Job handlers (stubs — filled in during Phase 3)
-// ---------------------------------------------------------------------------
-
-async function handleSnapshotStart(jobs: Job<SnapshotStartJob>[]): Promise<void> {
+// analyze.snapshot handler — implemented in Phase 4 (Intelligence PR).
+async function handleAnalyzeSnapshot(
+  jobs: Job<AnalyzeSnapshotJob>[],
+): Promise<void> {
   for (const job of jobs) {
-    const log = logger.child({ jobId: job.id, queue: QUEUES.snapshotStart });
-    log.info({ data: job.data }, "snapshot.start received");
-    // TODO: Phase 3 — implement src/pipeline/snapshotStart.ts
-  }
-}
-
-async function handleFetchSource(jobs: Job<FetchSourceJob>[]): Promise<void> {
-  for (const job of jobs) {
-    const log = logger.child({ jobId: job.id, queue: QUEUES.fetchSource });
-    log.info({ data: job.data }, "fetch.source received");
-    // TODO: Phase 3 — implement src/pipeline/fetchSource.ts
-  }
-}
-
-async function handleAnalyzeSnapshot(jobs: Job<AnalyzeSnapshotJob>[]): Promise<void> {
-  for (const job of jobs) {
-    const log = logger.child({ jobId: job.id, queue: QUEUES.analyzeSnapshot });
-    log.info({ data: job.data }, "analyze.snapshot received");
-    // TODO: Phase 3 — implement src/pipeline/analyzeSnapshot.ts
+    logger.info(
+      { jobId: job.id, snapshotId: job.data.snapshotId },
+      "analyze.snapshot received (Phase 4 stub)",
+    );
   }
 }
 

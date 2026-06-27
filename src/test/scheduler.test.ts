@@ -107,6 +107,6 @@ describe("scheduler — runWeeklyEnqueue", () => {
     );
 
     // With singletonKey dedup, only 1 job per competitor should exist.
-    expect(Number(result.rows[0].count)).toBeLessThanOrEqual(2);
+    expect(Number(result.rows[0]!.count)).toBeLessThanOrEqual(2);
   });
 });
