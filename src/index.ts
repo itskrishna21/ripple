@@ -1,28 +1,24 @@
-import { config } from "./config"; // fail fast on bad env before anything else
-import { buildApp } from "./http/app";
+import { config } from "./config"; // validates env — fails fast before anything else
 import { logger } from "./lib/logger";
-import { pool } from "./lib/db";
 
-async function startWeb(): Promise<void> {
-  const app = buildApp();
-  const server = app.listen(config.PORT, () => {
-    logger.info({ port: config.PORT }, "server started");
-  });
-
-  async function shutdown(signal: string): Promise<void> {
-    logger.info({ signal }, "shutdown signal received");
-    server.close(async () => {
-      await pool.end();
-      logger.info({}, "server closed");
-      process.exit(0);
-    });
+async function main(): Promise<void> {
+  switch (config.PROCESS_TYPE) {
+    case "web": {
+      const { startWeb } = await import("./process/web.js");
+      return startWeb();
+    }
+    case "worker": {
+      const { startWorker } = await import("./process/worker.js");
+      return startWorker();
+    }
+    case "scheduler": {
+      const { startScheduler } = await import("./process/scheduler.js");
+      return startScheduler();
+    }
   }
-
-  process.on("SIGTERM", () => void shutdown("SIGTERM"));
-  process.on("SIGINT", () => void shutdown("SIGINT"));
 }
 
-startWeb().catch((err) => {
-  logger.error({ err }, "failed to start");
+main().catch((err) => {
+  logger.error({ err }, "fatal startup error");
   process.exit(1);
 });
