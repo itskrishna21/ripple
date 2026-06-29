@@ -1,9 +1,9 @@
-import { auth } from "./firebase";
+import { getFirebaseAuth } from "./firebase";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
 async function getToken(): Promise<string> {
-  const user = auth.currentUser;
+  const user = getFirebaseAuth()?.currentUser;
   if (!user) throw new Error("Not authenticated");
   return user.getIdToken();
 }

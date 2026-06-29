@@ -10,11 +10,10 @@ import {
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
   signOut,
   type User,
 } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { getFirebaseAuth } from "@/lib/firebase";
 import { apiSignup } from "@/lib/api";
 
 type AuthContextValue = {
@@ -32,6 +31,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const auth = getFirebaseAuth();
+    if (!auth) { setLoading(false); return; }
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u);
       setLoading(false);
@@ -40,17 +41,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signin = async (email: string, password: string) => {
+    const auth = getFirebaseAuth()!;
     await signInWithEmailAndPassword(auth, email, password);
   };
 
   const signup = async (email: string, password: string, companyName: string) => {
-    // Create the company + user record via Ripple API first
     await apiSignup(email, password, companyName);
-    // Then sign in via Firebase to get a live session
+    const auth = getFirebaseAuth()!;
     await signInWithEmailAndPassword(auth, email, password);
   };
 
   const logout = async () => {
+    const auth = getFirebaseAuth()!;
     await signOut(auth);
   };
 

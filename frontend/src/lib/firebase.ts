@@ -7,5 +7,13 @@ const firebaseConfig = {
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID!,
 };
 
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]!;
-export const auth = getAuth(app);
+/**
+ * Returns the Firebase Auth instance — always call this inside event handlers
+ * or useEffect, never at module scope. Next.js evaluates modules server-side
+ * during prerender; Firebase Auth only works in the browser.
+ */
+export function getFirebaseAuth() {
+  if (typeof window === "undefined") return null;
+  const app = getApps()[0] ?? initializeApp(firebaseConfig);
+  return getAuth(app);
+}
