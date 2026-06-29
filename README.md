@@ -1,237 +1,81 @@
 # Ripple
 
-TypeScript API server for competitor tracking and analysis. Built with Express, Firebase Auth, and PostgreSQL.
+Competitive intelligence, automated. Track competitor websites weekly, diff the changes, score threats with an LLM.
 
-## Prerequisites
+**UI:** [frontend-lyart-eta-smuth8nxnu.vercel.app](https://frontend-lyart-eta-smuth8nxnu.vercel.app)  
+**API:** [ripple-api-ewgu.onrender.com](https://ripple-api-ewgu.onrender.com)
 
-- [Node.js](https://nodejs.org/) 18 or later
-- npm
-- [Docker](https://www.docker.com/) (for local PostgreSQL)
-- A [Firebase](https://console.firebase.google.com/) project with Email/Password auth enabled
+---
 
-## Getting started
+## How it works
 
-Install dependencies:
+1. Add a competitor with URLs for their pricing, changelog, careers, and blog pages
+2. Every Monday the scheduler fetches each URL, normalizes the HTML, and stores a snapshot
+3. The worker diffs the new snapshot against the previous week, sends changes to an LLM, and computes a 0–100 threat score
+4. Results appear in the dashboard immediately
+
+## Stack
+
+| Layer | Tech |
+|---|---|
+| API | Express + TypeScript |
+| Auth | Firebase Auth |
+| Database + queue | PostgreSQL + pg-boss |
+| AI | Vercel AI SDK + OpenAI |
+| Frontend | Next.js 16, Tailwind, TanStack Query |
+| Deploy | Render (API) + Vercel (UI) |
+
+## Local setup
 
 ```bash
+# Prerequisites: Node 20+, PostgreSQL running locally
+
+cp .env.example .env          # fill in Firebase + DB creds
 npm install
+npm run migrate               # run migrations
+PROCESS_TYPE=web npm run dev  # API on :3000
 ```
 
-Copy the environment file and fill in your Firebase credentials:
+Run the worker and scheduler in separate terminals:
 
 ```bash
-cp .env.example .env
+PROCESS_TYPE=worker npm run dev
+PROCESS_TYPE=scheduler npm run dev
 ```
-
-Start PostgreSQL:
-
-```bash
-docker compose up -d
-```
-
-Run in development mode (auto-reload on file changes):
-
-```bash
-npm run dev
-```
-
-The server starts at [http://localhost:3000](http://localhost:3000). Database migrations run automatically on startup.
 
 ## Environment variables
 
 | Variable | Description |
-| --- | --- |
+|---|---|
 | `DATABASE_URL` | PostgreSQL connection string |
 | `FIREBASE_PROJECT_ID` | Firebase project ID |
-| `FIREBASE_CLIENT_EMAIL` | Firebase service account email |
-| `FIREBASE_PRIVATE_KEY` | Firebase service account private key |
-| `FIREBASE_API_KEY` | Firebase Web API key |
-
-See `.env.example` for the default local `DATABASE_URL`.
-
-## Scripts
-
-| Command | Description |
-| --- | --- |
-| `npm run dev` | Run the server with hot reload via `tsx` |
-| `npm run build` | Compile TypeScript to `dist/` |
-| `npm start` | Run the compiled server |
-| `npm run typecheck` | Type-check without emitting files |
-| `npm run migrate` | Run database migrations manually |
+| `FIREBASE_CLIENT_EMAIL` | Service account email |
+| `FIREBASE_PRIVATE_KEY` | Service account private key |
+| `FIREBASE_API_KEY` | Web API key (for signup flow) |
+| `LLM_API_KEY` | OpenAI key (optional — stub runs without it) |
+| `LLM_MODEL` | Model name, default `gpt-4o-mini` |
+| `CORS_ORIGIN` | Allowed frontend origin |
 
 ## API
 
-### Auth
+```
+POST   /auth/signup
+POST   /auth/signin
+GET    /competitors
+POST   /competitors
+PATCH  /competitors/:id
+DELETE /competitors/:id
+GET    /analysis
+GET    /competitors/:id/analysis
+GET    /health
+GET    /ready
+GET    /metrics
+```
 
-| Method | Path | Auth | Description |
-| --- | --- | --- | --- |
-| `POST` | `/auth/signup` | No | Create a new user |
-| `POST` | `/auth/signin` | No | Sign in and receive a Firebase ID token |
+All competitor and analysis routes require `Authorization: Bearer <firebase-id-token>`.
 
-**Sign up**
+## Tests
 
 ```bash
-curl -X POST http://localhost:3000/auth/signup \
-  -H "Content-Type: application/json" \
-  -d '{"email":"you@example.com","password":"password123","companyName":"Acme Inc"}'
+npm test          # 124 tests across pipeline, diff, scoring, reaper, HTTP
 ```
-
-Creates a Firebase user, a company, and links the user as `owner`.
-
-**Sign in**
-
-```bash
-curl -X POST http://localhost:3000/auth/signin \
-  -H "Content-Type: application/json" \
-  -d '{"email":"you@example.com","password":"password123"}'
-```
-
-Returns a Firebase ID token, user profile, and company.
-
-### Competitors
-
-| Method | Path | Auth | Description |
-| --- | --- | --- | --- |
-| `GET` | `/competitors` | Yes | List competitors for your company |
-| `POST` | `/competitors` | Yes | Create a competitor |
-| `PATCH` | `/competitors/:id` | Yes | Update a competitor |
-| `DELETE` | `/competitors/:id` | Yes | Delete a competitor |
-
-**Create**
-
-```bash
-curl -X POST http://localhost:3000/competitors \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <firebase-id-token>" \
-  -d '{
-    "name": "LanceDB",
-    "website": "https://lancedb.ai",
-    "pricingUrl": "https://lancedb.ai/pricing",
-    "changelogUrl": "https://lancedb.ai/docs/changelog",
-    "careersUrl": "https://jobs.ashbyhq.com/lancedb",
-    "blogUrl": "https://lancedb.ai/blog"
-  }'
-```
-
-### Analysis
-
-| Method | Path | Auth | Description |
-| --- | --- | --- | --- |
-| `GET` | `/analysis` | Yes | Analysis for all competitors |
-| `GET` | `/competitors/:id/analysis` | Yes | Analysis for a single competitor |
-
-Protected routes require a Firebase ID token:
-
-```bash
-curl http://localhost:3000/competitors/<id>/analysis \
-  -H "Authorization: Bearer <firebase-id-token>"
-```
-
-## Project structure
-
-```
-src/
-├── index.ts                 # Express app entry point
-├── controller/
-│   ├── analysis.ts
-│   ├── competitor.ts
-│   └── auth/
-│       ├── signin.ts
-│       └── signup.ts
-├── service/
-│   ├── analysisService.ts
-│   ├── competitorService.ts
-│   ├── snapshotService.ts
-│   └── userService.ts
-├── schema/                  # Zod validation schemas
-│   ├── competitor.ts
-│   └── snapshot.ts
-├── lib/
-│   ├── auth.ts              # Firebase auth helpers
-│   ├── db.ts                # PostgreSQL connection pool
-│   ├── firebase.ts          # Firebase Admin SDK
-│   ├── migrate.ts           # Database migrations
-│   └── week.ts              # Weekly snapshot boundaries
-├── middleware/
-│   └── auth.ts              # Firebase token verification
-└── types/
-    └── express.d.ts
-migrations/                  # SQL migration files
-```
-
-## Tech stack
-
-- **TypeScript** — strict type checking
-- **Express** — HTTP server
-- **PostgreSQL** — competitor persistence
-- **Firebase Auth** — user authentication
-- **Zod** — request validation
-- **Mastra** — AI agent framework
-
-## Data model
-
-Per company, the data hierarchy looks like this:
-
-```mermaid
-erDiagram
-    companies ||--o{ users : has
-    companies ||--o{ competitors : tracks
-    competitors ||--o{ snapshots : has
-    snapshots ||--o{ signals : produces
-    snapshots ||--o| analyses : generates
-
-    companies {
-        uuid id
-        string name
-    }
-    users {
-        uuid id
-        uuid company_id
-        string firebase_uid
-        string email
-    }
-    competitors {
-        uuid id
-        uuid company_id
-        string name
-        string pricing_url
-        string changelog_url
-        string careers_url
-        string blog_url
-    }
-    snapshots {
-        uuid id
-        uuid competitor_id
-        date week_start
-        jsonb sources
-    }
-    signals {
-        uuid id
-        uuid snapshot_id
-        string category
-        string change_type
-        jsonb payload
-    }
-    analyses {
-        uuid id
-        uuid snapshot_id
-        uuid previous_snapshot_id
-        int threat_score
-        jsonb breakdown
-    }
-```
-
-**What this means**
-
-- **Company** is the tenant boundary — competitors, snapshots, and analyses all belong to a company
-- **Users** belong to one company (linked to Firebase)
-- **Competitors** are tracked per company, with user-provided URLs (`pricing_url`, `changelog_url`, `careers_url`, `blog_url`)
-- **Snapshots** are captured weekly per competitor
-- **Signals** are normalized changes extracted when comparing snapshots
-- **Analyses** are the scored output (threat level, breakdown, summary) for a snapshot vs the previous week
-
-Two companies can track the same competitor independently. All API queries are scoped to the authenticated user's company.
-
-## License
-
-ISC
