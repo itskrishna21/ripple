@@ -10,7 +10,7 @@ services:
     name: ripple-api
     runtime: node
     plan: free
-    buildCommand: npm ci && npm run build && npm run migrate
+    buildCommand: npm ci --include=dev && npm run build && npm run migrate
     startCommand: npm run start:web
     healthCheckPath: /health
     envVars:
@@ -40,7 +40,7 @@ services:
     name: ripple-worker
     runtime: node
     plan: free
-    buildCommand: npm ci && npm run build
+    buildCommand: npm ci --include=dev && npm run build
     startCommand: npm run start:worker
     envVars:
       - key: NODE_ENV
@@ -69,7 +69,7 @@ services:
     name: ripple-scheduler
     runtime: node
     plan: free
-    buildCommand: npm ci && npm run build
+    buildCommand: npm ci --include=dev && npm run build
     startCommand: npm run start:scheduler
     envVars:
       - key: NODE_ENV
