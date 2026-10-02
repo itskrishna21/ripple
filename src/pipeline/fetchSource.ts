@@ -1,4 +1,4 @@
-import type { Job } from "pg-boss";
+import type { JobWithMetadata } from "pg-boss";
 import { config } from "../config";
 import { logger } from "../lib/logger";
 import { FetchSourceJob } from "../queue/jobs";
@@ -11,31 +11,50 @@ import {
 } from "../service/snapshotSourceService";
 import { settleSnapshotIfComplete } from "./settle";
 
+/** JSON.stringify drops Error.message — log a plain object instead. */
+function errFields(err: unknown): Record<string, unknown> {
+  if (err instanceof Error) {
+    return {
+      errName: err.name,
+      errMessage: err.message,
+      ...(typeof (err as NodeJS.ErrnoException).code === "string"
+        ? { errCode: (err as NodeJS.ErrnoException).code }
+        : {}),
+    };
+  }
+  return { errMessage: String(err) };
+}
+
 /**
  * fetch.source handler.
  *
  * Terminal-failure contract (§5.6):
- * - On the final retry attempt (`retrycount >= FETCH_RETRY_LIMIT`) or for a
+ * - On the final retry attempt (`retryCount >= FETCH_RETRY_LIMIT`) or for a
  *   `BlockedUrlError` (won't get safer on retry), mark the source `failed` and
  *   swallow the error so pg-boss does NOT retry.
  * - On any other error, rethrow so pg-boss backs off and retries.
  * - `settleSnapshotIfComplete` is always called in `finally` — on success AND
  *   on terminal failure — so the snapshot advances as soon as its last source
  *   resolves either way.
+ *
+ * Requires `includeMetadata: true` on the worker registration so retryCount
+ * is present (pg-boss 12 omits it from plain Job).
  */
 export async function handleFetchSource(
-  jobs: Job<FetchSourceJob>[],
+  jobs: JobWithMetadata<FetchSourceJob>[],
 ): Promise<void> {
   for (const job of jobs) {
     const { snapshotId, competitorId, sourceKey, url } = job.data;
-    const retryCount = ((job as unknown) as Record<string, unknown>).retrycount as number ?? 0;
+    const retryCount = job.retryCount ?? 0;
     const isFinalAttempt = retryCount >= config.FETCH_RETRY_LIMIT;
 
     const log = logger.child({
       jobId: job.id,
       snapshotId,
       sourceKey,
+      url,
       retryCount,
+      retryLimit: job.retryLimit,
     });
 
     try {
@@ -57,17 +76,17 @@ export async function handleFetchSource(
       if (isTerminal) {
         // Mark terminal failure — don't rethrow, let pg-boss complete the job.
         await markSourceFailed(snapshotId, sourceKey, reason).catch((e) =>
-          log.error({ e }, "failed to mark source as failed"),
+          log.error(errFields(e), "failed to mark source as failed"),
         );
-        log.warn({ err, isFinalAttempt }, "source fetch failed (terminal)");
+        log.warn({ ...errFields(err), isFinalAttempt }, "source fetch failed (terminal)");
       } else {
-        log.warn({ err, retryCount }, "source fetch failed (will retry)");
+        log.warn({ ...errFields(err), retryCount }, "source fetch failed (will retry)");
         throw err; // pg-boss retries
       }
     } finally {
       // Settle runs on both success and terminal-failure paths.
       await settleSnapshotIfComplete(snapshotId, competitorId).catch((err) =>
-        log.error({ err }, "settle error"),
+        log.error(errFields(err), "settle error"),
       );
     }
   }

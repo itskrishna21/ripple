@@ -26,7 +26,11 @@ export async function registerWorkerJobs(): Promise<void> {
 
   await boss.work<FetchSourceJob>(
     QUEUES.fetchSource,
-    { localConcurrency: config.WORKER_FETCH_CONCURRENCY },
+    {
+      localConcurrency: config.WORKER_FETCH_CONCURRENCY,
+      // retryCount lives on JobWithMetadata only (pg-boss 12 default: omit).
+      includeMetadata: true,
+    },
     handleFetchSource,
   );
 
