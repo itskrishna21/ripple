@@ -11,6 +11,7 @@
     "start:web": "PROCESS_TYPE=web node dist/index.js",
     "start:worker": "PROCESS_TYPE=worker node dist/index.js",
     "start:scheduler": "PROCESS_TYPE=scheduler node dist/index.js",
+    "start:all": "PROCESS_TYPE=all node dist/index.js",
     "typecheck": "tsc --noEmit",
     "migrate": "tsx src/lib/migrate.ts",
     "test": "vitest run",
