@@ -16,7 +16,7 @@ import { handleAnalyzeSnapshot } from "../pipeline/analyzeSnapshot";
 // Bootstrap
 // ---------------------------------------------------------------------------
 
-export async function startWorker(): Promise<void> {
+export async function registerWorkerJobs(): Promise<void> {
   const boss = await getBoss();
 
   await boss.work<SnapshotStartJob>(
@@ -41,8 +41,13 @@ export async function startWorker(): Promise<void> {
       fetchConcurrency: config.WORKER_FETCH_CONCURRENCY,
       analyzeConcurrency: config.WORKER_ANALYZE_CONCURRENCY,
     },
-    "worker process started",
+    "worker jobs registered",
   );
+}
+
+export async function startWorker(): Promise<void> {
+  await registerWorkerJobs();
+  logger.info({}, "worker process started");
 
   async function shutdown(signal: string): Promise<void> {
     logger.info({ signal }, "shutdown signal received");

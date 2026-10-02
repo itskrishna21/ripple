@@ -28,7 +28,7 @@ You can add a competitor by hand. Or use **Find competitors**: company name from
 | AI | Mastra agents (categorize, discover) + OpenAI |
 | Search | DuckDuckGo HTML, or Serper if you set `SERPER_API_KEY` |
 | Frontend | Next.js, Tailwind, TanStack Query |
-| Deploy | Render (API) + Vercel (UI) |
+| Deploy | Render (API; free plan runs worker+scheduler in the same process) + Vercel (UI) |
 
 ## Local setup
 

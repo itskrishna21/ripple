@@ -15,6 +15,10 @@ async function main(): Promise<void> {
       const { startScheduler } = await import("./process/scheduler.js");
       return startScheduler();
     }
+    case "all": {
+      const { startAll } = await import("./process/all.js");
+      return startAll();
+    }
   }
 }
 

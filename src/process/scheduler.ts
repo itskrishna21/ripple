@@ -37,15 +37,9 @@ import { runReaper } from "../pipeline/reaper";
 // Bootstrap
 // ---------------------------------------------------------------------------
 
-export async function startScheduler(): Promise<void> {
-  // pg-boss must be started to use its cron/send APIs; scheduler itself
-  // doesn't consume jobs, but publish helpers need the boss connection.
+export async function startSchedulerLoops(): Promise<() => void> {
   await getBoss();
 
-  // Run the weekly enqueue immediately on start if it's Monday (UTC), then
-  // again every week via setInterval. In production this process would
-  // typically be triggered by a cron job / Cloud Scheduler; the in-process
-  // interval is a simple fallback for single-host deployments.
   await runWeeklyEnqueue().catch((err) =>
     logger.error({ err }, "weekly enqueue failed"),
   );
@@ -57,7 +51,6 @@ export async function startScheduler(): Promise<void> {
     );
   }, weekMs);
 
-  // Reaper runs on a short interval to sweep stuck snapshots.
   const reaperTimer = setInterval(() => {
     void runReaper().catch((err) =>
       logger.error({ err }, "reaper tick failed"),
@@ -66,13 +59,22 @@ export async function startScheduler(): Promise<void> {
 
   logger.info(
     { reaperIntervalMs: config.REAPER_INTERVAL_MS },
-    "scheduler process started",
+    "scheduler loops started",
   );
+
+  return () => {
+    clearInterval(weeklyTimer);
+    clearInterval(reaperTimer);
+  };
+}
+
+export async function startScheduler(): Promise<void> {
+  const stopLoops = await startSchedulerLoops();
+  logger.info({}, "scheduler process started");
 
   async function shutdown(signal: string): Promise<void> {
     logger.info({ signal }, "shutdown signal received");
-    clearInterval(weeklyTimer);
-    clearInterval(reaperTimer);
+    stopLoops();
     await stopBoss();
     await pool.end();
     logger.info({}, "scheduler process shut down");
