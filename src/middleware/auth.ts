@@ -18,6 +18,12 @@ export async function requireAuth(
 
   try {
     const decoded = await getFirebaseAuth().verifyIdToken(token);
+
+    if (!decoded.email_verified) {
+      res.status(403).json({ error: "Email not verified" });
+      return;
+    }
+
     const user = await getUserByFirebaseUid(decoded.uid);
 
     if (!user) {

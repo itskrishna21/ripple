@@ -133,8 +133,16 @@ export async function getAllAnalyses(): Promise<import("@/types").CompetitorAnal
   }));
 }
 
-export const getCompetitorAnalysis = (id: string) =>
-  request<import("@/types").Analysis>(`/competitors/${id}/analysis`);
+export async function getCompetitorAnalysis(
+  id: string,
+): Promise<import("@/types").Analysis | null> {
+  const data = await request<
+    import("@/types").Analysis | { competitorId: string; analysis: null }
+  >(`/competitors/${id}/analysis`);
+  // Backend returns { competitorId, analysis: null } when none exists yet
+  if ("analysis" in data && data.analysis === null) return null;
+  return data as import("@/types").Analysis;
+}
 
 // Ops (no auth needed)
 export async function getReady(): Promise<import("@/types").ReadyResponse> {

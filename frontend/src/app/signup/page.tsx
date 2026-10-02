@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Zap } from "lucide-react";
-import { useAuth } from "@/context/auth";
+import { postAuthPath, useAuth } from "@/context/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -23,8 +23,8 @@ export default function SignupPage() {
     setError("");
     setLoading(true);
     try {
-      await signup(form.email, form.password, form.companyName);
-      router.replace("/dashboard");
+      const user = await signup(form.email, form.password, form.companyName);
+      router.replace(postAuthPath(user));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign up failed");
     } finally {

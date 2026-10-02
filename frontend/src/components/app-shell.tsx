@@ -10,12 +10,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (loading) return;
+    if (!user) {
       router.replace("/login");
+      return;
+    }
+    if (!user.emailVerified) {
+      router.replace("/verify-email");
     }
   }, [user, loading, router]);
 
-  if (loading || !user) {
+  if (loading || !user || !user.emailVerified) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#09090b]">
         <div className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
