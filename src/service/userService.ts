@@ -6,9 +6,12 @@ import { SignupInput } from "../schema/signup";
 
 export { UserExistsError };
 
+export type DigestCadence = "weekly" | "biweekly";
+
 export type Company = {
   id: string;
   name: string;
+  digestCadence?: DigestCadence;
 };
 
 export type User = {
@@ -22,6 +25,7 @@ export type User = {
 type CompanyRow = {
   id: string;
   name: string;
+  digest_cadence?: string;
 };
 
 type UserRow = {
@@ -36,6 +40,9 @@ function rowToCompany(row: CompanyRow): Company {
   return {
     id: row.id,
     name: row.name,
+    ...(row.digest_cadence
+      ? { digestCadence: row.digest_cadence as DigestCadence }
+      : {}),
   };
 }
 
@@ -67,7 +74,7 @@ export async function getUserByFirebaseUid(
 
 export async function getCompanyById(id: string): Promise<Company | null> {
   const result = await pool.query<CompanyRow>(
-    "SELECT id, name FROM companies WHERE id = $1",
+    "SELECT id, name, digest_cadence FROM companies WHERE id = $1",
     [id],
   );
 
@@ -94,7 +101,7 @@ export async function signup(
       await client.query("BEGIN");
 
       const companyResult = await client.query<CompanyRow>(
-        "INSERT INTO companies (name) VALUES ($1) RETURNING id, name",
+        "INSERT INTO companies (name) VALUES ($1) RETURNING id, name, digest_cadence",
         [input.companyName],
       );
 
@@ -140,6 +147,16 @@ export async function signup(
 
     throw error;
   }
+}
+
+export async function setCompanyCadence(
+  companyId: string,
+  cadence: DigestCadence,
+): Promise<void> {
+  await pool.query(
+    `UPDATE companies SET digest_cadence = $2 WHERE id = $1`,
+    [companyId, cadence],
+  );
 }
 
 export function toPublicUser(user: User): {

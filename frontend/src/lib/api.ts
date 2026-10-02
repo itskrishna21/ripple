@@ -48,14 +48,30 @@ export async function apiSignup(email: string, password: string, companyName: st
 export const getCompetitors = () =>
   request<import("@/types").Competitor[]>("/competitors");
 
+function toApiCompetitor(data: {
+  name: string;
+  website: string;
+  sources: Record<string, string>;
+}) {
+  return {
+    name: data.name,
+    website: data.website,
+    pricingUrl: data.sources.pricing,
+    changelogUrl: data.sources.changelog,
+    careersUrl: data.sources.careers,
+    blogUrl: data.sources.blog,
+  };
+}
+
 export const createCompetitor = (data: {
   name: string;
   website: string;
   sources: Record<string, string>;
-}) => request<import("@/types").Competitor>("/competitors", {
-  method: "POST",
-  body: JSON.stringify(data),
-});
+}) =>
+  request<import("@/types").Competitor>("/competitors", {
+    method: "POST",
+    body: JSON.stringify(toApiCompetitor(data)),
+  });
 
 export const updateCompetitor = (
   id: string,
@@ -63,8 +79,40 @@ export const updateCompetitor = (
 ) =>
   request<import("@/types").Competitor>(`/competitors/${id}`, {
     method: "PATCH",
-    body: JSON.stringify(data),
+    body: JSON.stringify(
+      data.sources
+        ? toApiCompetitor({
+            name: data.name ?? "",
+            website: data.website ?? "",
+            sources: data.sources,
+          })
+        : data,
+    ),
   });
+
+export const getMe = () => request<import("@/types").MeResponse>("/me");
+
+export const discoverCompetitors = () =>
+  request<import("@/types").DiscoverOutput>("/discover", {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+
+export const subscribeCompetitors = (data: {
+  cadence: "weekly" | "biweekly";
+  competitors: Array<{
+    name: string;
+    website: string;
+    pricingUrl?: string;
+    changelogUrl?: string;
+    careersUrl?: string;
+    blogUrl?: string;
+  }>;
+}) =>
+  request<{ cadence: string; competitors: import("@/types").Competitor[] }>(
+    "/discover/subscribe",
+    { method: "POST", body: JSON.stringify(data) },
+  );
 
 export const deleteCompetitor = (id: string) =>
   request<void>(`/competitors/${id}`, { method: "DELETE" });

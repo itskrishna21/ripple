@@ -98,10 +98,13 @@ describe("POST /auth/signin — validation", () => {
 
 describe("Protected routes without token", () => {
   const protectedRoutes = [
+    { method: "get", path: "/me" },
     { method: "get", path: "/competitors" },
     { method: "post", path: "/competitors" },
     { method: "get", path: "/analysis" },
     { method: "get", path: "/competitors/some-id/analysis" },
+    { method: "post", path: "/discover" },
+    { method: "post", path: "/discover/subscribe" },
   ] as const;
 
   for (const { method, path } of protectedRoutes) {

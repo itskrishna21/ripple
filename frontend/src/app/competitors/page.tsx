@@ -13,9 +13,12 @@ import {
   createCompetitor,
   updateCompetitor,
   deleteCompetitor,
+  discoverCompetitors,
+  getMe,
+  subscribeCompetitors,
 } from "@/lib/api";
-import type { Competitor, SourceKey } from "@/types";
-import { cn } from "@/lib/utils";
+import type { Competitor, DiscoverCandidate, SourceKey } from "@/types";
+import { competitorSources } from "@/types";
 
 const SOURCE_KEYS: SourceKey[] = ["pricing", "changelog", "careers", "blog"];
 
@@ -98,7 +101,16 @@ export default function CompetitorsPage() {
     queryFn: getCompetitors,
   });
 
+  const { data: me } = useQuery({
+    queryKey: ["me"],
+    queryFn: getMe,
+  });
+
   const [addOpen, setAddOpen] = useState(false);
+  const [findOpen, setFindOpen] = useState(false);
+  const [cadence, setCadence] = useState<"weekly" | "biweekly">("weekly");
+  const [found, setFound] = useState<DiscoverCandidate[]>([]);
+  const [picked, setPicked] = useState<Set<string>>(new Set());
   const [editTarget, setEditTarget] = useState<Competitor | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Competitor | null>(null);
 
@@ -139,6 +151,32 @@ export default function CompetitorsPage() {
     },
   });
 
+  const findMutation = useMutation({
+    mutationFn: () => discoverCompetitors(),
+    onSuccess: (data) => {
+      setFound(data.competitors);
+      setPicked(new Set(data.competitors.map((c) => c.name)));
+    },
+  });
+
+  const subscribeMutation = useMutation({
+    mutationFn: () =>
+      subscribeCompetitors({
+        cadence,
+        competitors: found
+          .filter((c) => picked.has(c.name))
+          .map(({ why: _why, ...rest }) => rest),
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["competitors"] });
+      void qc.invalidateQueries({ queryKey: ["analyses"] });
+      void qc.invalidateQueries({ queryKey: ["me"] });
+      setFindOpen(false);
+      setFound([]);
+      setPicked(new Set());
+    },
+  });
+
   return (
     <AppShell>
       <div className="flex items-center justify-between mb-8">
@@ -148,10 +186,24 @@ export default function CompetitorsPage() {
             {competitors.length} tracked
           </p>
         </div>
-        <Button onClick={() => setAddOpen(true)} size="sm">
-          <Plus size={14} />
-          Add competitor
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => {
+              if (me?.company.digestCadence) {
+                setCadence(me.company.digestCadence);
+              }
+              setFindOpen(true);
+            }}
+            size="sm"
+          >
+            Find competitors
+          </Button>
+          <Button onClick={() => setAddOpen(true)} size="sm">
+            <Plus size={14} />
+            Add competitor
+          </Button>
+        </div>
       </div>
 
       {/* Table */}
@@ -179,6 +231,7 @@ export default function CompetitorsPage() {
                 <tr key={c.id} className="hover:bg-white/2 transition-colors">
                   <td className="px-4 py-3 font-medium text-white">{c.name}</td>
                   <td className="px-4 py-3">
+                    {c.website ? (
                     <a
                       href={c.website}
                       target="_blank"
@@ -189,11 +242,14 @@ export default function CompetitorsPage() {
                       {c.website.replace(/^https?:\/\//, "").replace(/\/$/, "")}
                       <ExternalLink size={10} />
                     </a>
+                    ) : (
+                      <span className="text-zinc-700 text-xs">—</span>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-1.5 flex-wrap">
-                      {Object.keys(c.sources ?? {}).length > 0 ? (
-                        Object.keys(c.sources).map((k) => (
+                      {Object.keys(competitorSources(c)).length > 0 ? (
+                        Object.keys(competitorSources(c)).map((k) => (
                           <Badge key={k} variant="muted">{k}</Badge>
                         ))
                       ) : (
@@ -251,9 +307,9 @@ export default function CompetitorsPage() {
           <CompetitorForm
             initial={{
               name: editTarget.name,
-              website: editTarget.website,
+              website: editTarget.website ?? "",
               sources: Object.fromEntries(
-                SOURCE_KEYS.map((k) => [k, (editTarget.sources as Record<string, string>)[k] ?? ""]),
+                SOURCE_KEYS.map((k) => [k, competitorSources(editTarget)[k] ?? ""]),
               ),
             }}
             onSubmit={(d) => editMutation.mutate(d)}
@@ -261,6 +317,97 @@ export default function CompetitorsPage() {
           />
         </Dialog>
       )}
+
+      <Dialog
+        open={findOpen}
+        onClose={() => setFindOpen(false)}
+        title="Find competitors"
+        description="Ripple proposes rivals for your company. You confirm, then weekly or biweekly mail."
+        className="max-w-lg"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-zinc-400">
+            Company{" "}
+            <span className="text-white font-medium">
+              {me?.company.name ?? "…"}
+            </span>
+          </p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setCadence("weekly")}
+              className={
+                cadence === "weekly"
+                  ? "text-xs px-3 py-1.5 rounded-md bg-white text-zinc-900"
+                  : "text-xs px-3 py-1.5 rounded-md border border-white/10 text-zinc-400"
+              }
+            >
+              Weekly
+            </button>
+            <button
+              type="button"
+              onClick={() => setCadence("biweekly")}
+              className={
+                cadence === "biweekly"
+                  ? "text-xs px-3 py-1.5 rounded-md bg-white text-zinc-900"
+                  : "text-xs px-3 py-1.5 rounded-md border border-white/10 text-zinc-400"
+              }
+            >
+              Biweekly
+            </button>
+          </div>
+          <Button
+            type="button"
+            loading={findMutation.isPending}
+            className="w-full"
+            disabled={!me?.company.name}
+            onClick={() => findMutation.mutate()}
+          >
+            Propose competitors
+          </Button>
+          {findMutation.isError && (
+            <p className="text-xs text-red-400">{String(findMutation.error)}</p>
+          )}
+          {found.length > 0 && (
+            <div className="space-y-2 max-h-56 overflow-y-auto">
+              {found.map((c) => (
+                <label
+                  key={c.name}
+                  className="flex items-start gap-3 p-2 rounded-md border border-white/8 cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={picked.has(c.name)}
+                    onChange={() => {
+                      const next = new Set(picked);
+                      if (next.has(c.name)) next.delete(c.name);
+                      else next.add(c.name);
+                      setPicked(next);
+                    }}
+                  />
+                  <span>
+                    <span className="text-sm text-white block">{c.name}</span>
+                    <span className="text-xs text-zinc-500 block">{c.website}</span>
+                    <span className="text-xs text-zinc-600 block">{c.why}</span>
+                  </span>
+                </label>
+              ))}
+              <Button
+                type="button"
+                loading={subscribeMutation.isPending}
+                className="w-full"
+                disabled={picked.size === 0}
+                onClick={() => subscribeMutation.mutate()}
+              >
+                Subscribe · {cadence}
+              </Button>
+              {subscribeMutation.isError && (
+                <p className="text-xs text-red-400">{String(subscribeMutation.error)}</p>
+              )}
+            </div>
+          )}
+        </div>
+      </Dialog>
 
       {/* Delete confirm */}
       {deleteTarget && (

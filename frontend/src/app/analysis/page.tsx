@@ -53,7 +53,7 @@ export default function AnalysisPage() {
                   <td className="px-4 py-3">
                     <p className="font-medium text-white">{competitor.name}</p>
                     <p className="text-xs text-zinc-600 mt-0.5">
-                      {competitor.website.replace(/^https?:\/\//, "")}
+                      {(competitor.website ?? "").replace(/^https?:\/\//, "")}
                     </p>
                   </td>
                   <td className="px-4 py-3">

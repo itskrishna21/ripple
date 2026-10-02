@@ -17,6 +17,9 @@ import {
 import { requireAuth } from "../middleware/auth";
 import { signupSchema } from "../schema/signup";
 import { signinSchema } from "../schema/signin";
+import { discoverSchema, subscribeSchema } from "../schema/discover";
+import { discover, subscribe } from "../controller/discover";
+import { me } from "../controller/me";
 import { asyncHandler } from "./asyncHandler";
 import { errorMiddleware } from "./errorMiddleware";
 import { validate } from "./validate";
@@ -122,6 +125,7 @@ export function buildApp() {
   app.post("/auth/signup", validate(signupSchema), asyncHandler(signup));
   app.post("/auth/signin", validate(signinSchema), asyncHandler(signin));
 
+  app.get("/me", requireAuth, asyncHandler(me));
   app.get("/competitors", requireAuth, asyncHandler(getCompetitors));
   app.post("/competitors", requireAuth, validateCreate, asyncHandler(createCompetitor));
   app.patch("/competitors/:id", requireAuth, validateUpdate, asyncHandler(updateCompetitor));
@@ -129,6 +133,9 @@ export function buildApp() {
 
   app.get("/analysis", requireAuth, asyncHandler(getAnalysisOfAllCompetitors));
   app.get("/competitors/:id/analysis", requireAuth, asyncHandler(getAnalysisByCompetitorId));
+
+  app.post("/discover", requireAuth, validate(discoverSchema), asyncHandler(discover));
+  app.post("/discover/subscribe", requireAuth, validate(subscribeSchema), asyncHandler(subscribe));
 
   app.use(errorMiddleware);
 

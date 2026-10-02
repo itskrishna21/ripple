@@ -30,6 +30,8 @@ const schema = z.object({
   // LLM (optional — needed for analyze.snapshot; worker will skip LLM if absent)
   LLM_API_KEY: z.string().default(""),
   LLM_MODEL: z.string().default("gpt-4o-mini"),
+  /** Optional — Google results via serper.dev; else DuckDuckGo HTML search. */
+  SERPER_API_KEY: z.string().default(""),
 });
 
 function parseConfig() {

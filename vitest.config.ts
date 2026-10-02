@@ -12,6 +12,7 @@ export default defineConfig({
     // Run test files sequentially so pg-boss integration tests don't race
     // against each other on the shared Postgres database.
     fileParallelism: false,
+    exclude: ["node_modules/**", "dist/**", "frontend/**"],
     coverage: {
       provider: "v8",
       reporter: ["text", "json-summary"],

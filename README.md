@@ -1,18 +1,22 @@
 # Ripple
 
-Competitive intelligence, automated. Track competitor websites weekly, diff the changes, score threats with an LLM.
+Weekly competitive intel. You pick who to watch. We fetch their pages, diff week over week, and score how much it actually matters.
 
 **UI:** [frontend-lyart-eta-smuth8nxnu.vercel.app](https://frontend-lyart-eta-smuth8nxnu.vercel.app)  
 **API:** [ripple-api-ewgu.onrender.com](https://ripple-api-ewgu.onrender.com)
+
+You can add a competitor by hand. Or use **Find competitors**: it uses the company name from signup, searches the web so we don't mix up homonyms, then a Mastra agent proposes substitutes in the same product category. You tick the ones you want and set weekly or biweekly. That's it. Digest email isn't sending yet — cadence is stored, that's all.
 
 ---
 
 ## How it works
 
-1. Add a competitor with URLs for their pricing, changelog, careers, and blog pages
-2. Every Monday the scheduler fetches each URL, normalizes the HTML, and stores a snapshot
-3. The worker diffs the new snapshot against the previous week, sends changes to an LLM, and computes a 0–100 threat score
-4. Results appear in the dashboard immediately
+1. Sign up with your company name. That's the tenant.
+2. **Find competitors** proposes a list (`POST /discover`), or you paste URLs yourself.
+3. Subscribe writes those rivals and a digest cadence (`POST /discover/subscribe`).
+4. Monday the scheduler fetches pricing / changelog / careers / blog, normalizes HTML, stores a snapshot.
+5. The worker diffs vs last week, Mastra categorizes the changes, we compute a 0–100 threat score.
+6. Dashboard shows it. No LLM key? stubs so local / CI still run.
 
 ## Stack
 
@@ -21,22 +25,25 @@ Competitive intelligence, automated. Track competitor websites weekly, diff the 
 | API | Express + TypeScript |
 | Auth | Firebase Auth |
 | Database + queue | PostgreSQL + pg-boss |
-| AI | Vercel AI SDK + OpenAI |
-| Frontend | Next.js 16, Tailwind, TanStack Query |
+| AI | Mastra agents (categorize, discover, digest draft) + OpenAI |
+| Search | DuckDuckGo HTML, or Serper if you set `SERPER_API_KEY` |
+| Frontend | Next.js, Tailwind, TanStack Query |
 | Deploy | Render (API) + Vercel (UI) |
 
 ## Local setup
 
 ```bash
-# Prerequisites: Node 20+, PostgreSQL running locally
+# Node 20+, Postgres up (docker-compose is fine)
 
-cp .env.example .env          # fill in Firebase + DB creds
+cp .env.example .env          # Firebase + DATABASE_URL. LLM_API_KEY if you want real discover/analyze
 npm install
-npm run migrate               # run migrations
-PROCESS_TYPE=web npm run dev  # API on :3000
+npm run migrate
+PROCESS_TYPE=web npm run dev  # API :3000
 ```
 
-Run the worker and scheduler in separate terminals:
+Frontend: `cd frontend && npm run dev` — usually `:3001`.
+
+Worker + scheduler in other terminals:
 
 ```bash
 PROCESS_TYPE=worker npm run dev
@@ -47,35 +54,45 @@ PROCESS_TYPE=scheduler npm run dev
 
 | Variable | Description |
 |---|---|
-| `DATABASE_URL` | PostgreSQL connection string |
-| `FIREBASE_PROJECT_ID` | Firebase project ID |
+| `DATABASE_URL` | PostgreSQL |
+| `FIREBASE_PROJECT_ID` | Firebase project |
 | `FIREBASE_CLIENT_EMAIL` | Service account email |
-| `FIREBASE_PRIVATE_KEY` | Service account private key |
-| `FIREBASE_API_KEY` | Web API key (for signup flow) |
-| `LLM_API_KEY` | OpenAI key (optional — stub runs without it) |
-| `LLM_MODEL` | Model name, default `gpt-4o-mini` |
-| `CORS_ORIGIN` | Allowed frontend origin |
+| `FIREBASE_PRIVATE_KEY` | Service account key |
+| `FIREBASE_API_KEY` | Web API key (signup) |
+| `LLM_API_KEY` | OpenAI. Empty = stubs |
+| `LLM_MODEL` | Default `gpt-4o-mini` |
+| `SERPER_API_KEY` | Optional Google search via serper.dev |
+| `CORS_ORIGIN` | Frontend origin |
+
+Don't paste keys in chat. `.env` stays local.
 
 ## API
 
 ```
 POST   /auth/signup
 POST   /auth/signin
+GET    /me
 GET    /competitors
 POST   /competitors
 PATCH  /competitors/:id
 DELETE /competitors/:id
 GET    /analysis
 GET    /competitors/:id/analysis
+POST   /discover
+POST   /discover/subscribe
 GET    /health
 GET    /ready
 GET    /metrics
 ```
 
-All competitor and analysis routes require `Authorization: Bearer <firebase-id-token>`.
+`/me`, competitors, analysis, and discover need `Authorization: Bearer <firebase-id-token>`.
+
+`POST /discover` uses the logged-in company. You don't send a name. Optional `companyName` override exists if you ever need it.
 
 ## Tests
 
 ```bash
-npm test          # 124 tests across pipeline, diff, scoring, reaper, HTTP
+npm test
 ```
+
+Pipeline, diff, scoring, reaper, HTTP, Mastra evals, discover search parsing. `dist/` is excluded so compiled tests don't double-run.

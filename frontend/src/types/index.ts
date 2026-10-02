@@ -2,12 +2,48 @@ export type SourceKey = "pricing" | "changelog" | "careers" | "blog";
 
 export type Competitor = {
   id: string;
-  company_id: string;
+  name: string;
+  website?: string;
+  pricingUrl?: string;
+  changelogUrl?: string;
+  careersUrl?: string;
+  blogUrl?: string;
+};
+
+export function competitorSources(
+  c: Pick<Competitor, "pricingUrl" | "changelogUrl" | "careersUrl" | "blogUrl">,
+): Partial<Record<SourceKey, string>> {
+  return {
+    ...(c.pricingUrl ? { pricing: c.pricingUrl } : {}),
+    ...(c.changelogUrl ? { changelog: c.changelogUrl } : {}),
+    ...(c.careersUrl ? { careers: c.careersUrl } : {}),
+    ...(c.blogUrl ? { blog: c.blogUrl } : {}),
+  };
+}
+
+export type DiscoverCandidate = {
   name: string;
   website: string;
-  sources: Partial<Record<SourceKey, string>>;
-  created_at: string;
-  updated_at: string;
+  pricingUrl?: string;
+  changelogUrl?: string;
+  careersUrl?: string;
+  blogUrl?: string;
+  why: string;
+};
+
+export type DiscoverOutput = {
+  company: string;
+  competitors: DiscoverCandidate[];
+};
+
+export type MeResponse = {
+  email: string;
+  role: string;
+  company: {
+    id: string;
+    name: string;
+    digestCadence: "weekly" | "biweekly" | null;
+  };
 };
 
 export type Signal = {
