@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from "express";
+import * as Sentry from "@sentry/node";
 import { logger } from "../lib/logger";
 import {
   BlockedUrlError,
@@ -36,6 +37,7 @@ export function errorMiddleware(
       { err, reqId: (req as { id?: string }).id, method: req.method, url: req.url },
       "unhandled error",
     );
+    Sentry.captureException(err);
   }
 
   if (err instanceof ValidationError) {

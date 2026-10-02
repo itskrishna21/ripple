@@ -1,5 +1,7 @@
+import "./instrument.js"; // Sentry first — before other app imports
 import { config } from "./config"; // validates env — fails fast before anything else
 import { logger } from "./lib/logger";
+import { Sentry } from "./instrument.js";
 
 async function main(): Promise<void> {
   switch (config.PROCESS_TYPE) {
@@ -24,5 +26,6 @@ async function main(): Promise<void> {
 
 main().catch((err) => {
   logger.error({ err }, "fatal startup error");
+  Sentry.captureException(err);
   process.exit(1);
 });

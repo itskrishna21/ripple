@@ -29,6 +29,7 @@ You can add a competitor by hand. Or use **Find competitors**: company name from
 | Search | DuckDuckGo HTML, or Serper if you set `SERPER_API_KEY` |
 | Frontend | Next.js, Tailwind, TanStack Query |
 | Deploy | Render (API; free plan runs worker+scheduler in the same process) + Vercel (UI) |
+| Errors | Sentry (optional — set `SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN`) |
 
 ## Local setup
 
@@ -63,6 +64,8 @@ PROCESS_TYPE=scheduler npm run dev
 | `LLM_MODEL` | Default `gpt-4o-mini` |
 | `SERPER_API_KEY` | Optional Google search via serper.dev |
 | `CORS_ORIGIN` | Frontend origin (comma-separated if more than one) |
+| `SENTRY_DSN` | Optional. Sentry DSN for the API (Node project) |
+| `NEXT_PUBLIC_SENTRY_DSN` | Optional. Sentry DSN for the frontend (Next.js project) |
 
 Don't paste keys in chat. `.env` stays local.
 

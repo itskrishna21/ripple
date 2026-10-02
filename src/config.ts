@@ -32,6 +32,9 @@ const schema = z.object({
   LLM_MODEL: z.string().default("gpt-4o-mini"),
   /** Optional — Google results via serper.dev; else DuckDuckGo HTML search. */
   SERPER_API_KEY: z.string().default(""),
+
+  /** Optional — Sentry error monitoring. Empty = disabled. */
+  SENTRY_DSN: z.string().default(""),
 });
 
 function parseConfig() {
