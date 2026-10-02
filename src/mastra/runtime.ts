@@ -8,7 +8,6 @@ import { config } from "../config";
 import {
   AnalysisOutputSchema,
   DiscoverOutputSchema,
-  DigestOutputSchema,
 } from "./schemas";
 
 const CATEGORIZE_INSTRUCTIONS = `
@@ -35,11 +34,6 @@ Exclude foundation-model labs, generic AI platforms, and research orgs
 unless they ship the same product type.
 Do not invent companies. Prefer names that appear in the competitor snippets.
 Each why is one short sentence naming the overlap.
-`.trim();
-
-const DIGEST_INSTRUCTIONS = `
-You write a short weekly competitive digest from stored signals only.
-Subject line under 80 chars. 3–6 bullets. No claims not in the signals.
 `.trim();
 
 function modelId(): `${string}/${string}` {
@@ -72,15 +66,8 @@ export function getMastra(): Mastra {
     model: modelId(),
   });
 
-  const digestAgent = new Agent({
-    id: "digest",
-    name: "digest",
-    instructions: DIGEST_INSTRUCTIONS,
-    model: modelId(),
-  });
-
   cached = new Mastra({
-    agents: { categorizeAgent, discoverAgent, digestAgent },
+    agents: { categorizeAgent, discoverAgent },
   });
   return cached;
 }
@@ -88,7 +75,6 @@ export function getMastra(): Mastra {
 export const mastraSchemas = {
   categorize: AnalysisOutputSchema,
   discover: DiscoverOutputSchema,
-  digest: DigestOutputSchema,
 };
 
 export const MASTRA_PROMPT_VERSION = "v1";

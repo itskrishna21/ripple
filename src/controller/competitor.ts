@@ -10,6 +10,7 @@ import {
   updateCompetitor as updateCompetitorRecord,
 } from "../service/competitorService";
 import { validate } from "../http/validate";
+import { enqueueBaselineSnapshot } from "../queue/enqueueBaseline";
 
 // Re-export validate-wrapped schemas for use in app.ts route registration.
 export const validateCreate = validate(createCompetitorSchema);
@@ -24,6 +25,7 @@ export async function getCompetitors(req: Request, res: Response): Promise<void>
 export async function createCompetitor(req: Request, res: Response): Promise<void> {
   const { companyId } = req.user!;
   const competitor = await createCompetitorRecord(companyId, req.body);
+  await enqueueBaselineSnapshot(competitor.id);
   res.status(201).json(competitor);
 }
 

@@ -20,10 +20,3 @@ export const DiscoverOutputSchema = z.object({
 
 export type DiscoverCandidate = z.infer<typeof DiscoverCandidateSchema>;
 export type DiscoverOutput = z.infer<typeof DiscoverOutputSchema>;
-
-export const DigestOutputSchema = z.object({
-  subject: z.string().min(1),
-  bullets: z.array(z.string().min(1)).min(1).max(6),
-});
-
-export type DigestOutput = z.infer<typeof DigestOutputSchema>;

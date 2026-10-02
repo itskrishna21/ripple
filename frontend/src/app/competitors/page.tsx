@@ -108,7 +108,6 @@ export default function CompetitorsPage() {
 
   const [addOpen, setAddOpen] = useState(false);
   const [findOpen, setFindOpen] = useState(false);
-  const [cadence, setCadence] = useState<"weekly" | "biweekly">("weekly");
   const [found, setFound] = useState<DiscoverCandidate[]>([]);
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [editTarget, setEditTarget] = useState<Competitor | null>(null);
@@ -162,7 +161,6 @@ export default function CompetitorsPage() {
   const subscribeMutation = useMutation({
     mutationFn: () =>
       subscribeCompetitors({
-        cadence,
         competitors: found
           .filter((c) => picked.has(c.name))
           .map(({ why: _why, ...rest }) => rest),
@@ -189,12 +187,7 @@ export default function CompetitorsPage() {
         <div className="flex gap-2">
           <Button
             variant="outline"
-            onClick={() => {
-              if (me?.company.digestCadence) {
-                setCadence(me.company.digestCadence);
-              }
-              setFindOpen(true);
-            }}
+            onClick={() => setFindOpen(true)}
             size="sm"
           >
             Find competitors
@@ -285,7 +278,7 @@ export default function CompetitorsPage() {
         open={addOpen}
         onClose={() => setAddOpen(false)}
         title="Add competitor"
-        description="Ripple will fetch these URLs every week and analyze changes."
+        description="We take a starting photo now, then fetch these URLs every week."
       >
         <CompetitorForm
           initial={emptyForm()}
@@ -322,7 +315,7 @@ export default function CompetitorsPage() {
         open={findOpen}
         onClose={() => setFindOpen(false)}
         title="Find competitors"
-        description="Ripple proposes rivals for your company. You confirm, then weekly or biweekly mail."
+        description="Ripple proposes rivals. You confirm. We take a starting photo, then crawl weekly."
         className="max-w-lg"
       >
         <div className="space-y-4">
@@ -332,30 +325,6 @@ export default function CompetitorsPage() {
               {me?.company.name ?? "…"}
             </span>
           </p>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setCadence("weekly")}
-              className={
-                cadence === "weekly"
-                  ? "text-xs px-3 py-1.5 rounded-md bg-white text-zinc-900"
-                  : "text-xs px-3 py-1.5 rounded-md border border-white/10 text-zinc-400"
-              }
-            >
-              Weekly
-            </button>
-            <button
-              type="button"
-              onClick={() => setCadence("biweekly")}
-              className={
-                cadence === "biweekly"
-                  ? "text-xs px-3 py-1.5 rounded-md bg-white text-zinc-900"
-                  : "text-xs px-3 py-1.5 rounded-md border border-white/10 text-zinc-400"
-              }
-            >
-              Biweekly
-            </button>
-          </div>
           <Button
             type="button"
             loading={findMutation.isPending}
@@ -399,7 +368,7 @@ export default function CompetitorsPage() {
                 disabled={picked.size === 0}
                 onClick={() => subscribeMutation.mutate()}
               >
-                Subscribe · {cadence}
+                Add selected
               </Button>
               {subscribeMutation.isError && (
                 <p className="text-xs text-red-400">{String(subscribeMutation.error)}</p>

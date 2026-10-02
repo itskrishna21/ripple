@@ -5,7 +5,6 @@ export const discoverSchema = z.object({
 });
 
 export const subscribeSchema = z.object({
-  cadence: z.enum(["weekly", "biweekly"]),
   competitors: z
     .array(
       z.object({

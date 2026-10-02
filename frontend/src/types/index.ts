@@ -42,7 +42,6 @@ export type MeResponse = {
   company: {
     id: string;
     name: string;
-    digestCadence: "weekly" | "biweekly" | null;
   };
 };
 

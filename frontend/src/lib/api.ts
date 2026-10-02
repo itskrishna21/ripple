@@ -99,7 +99,6 @@ export const discoverCompetitors = () =>
   });
 
 export const subscribeCompetitors = (data: {
-  cadence: "weekly" | "biweekly";
   competitors: Array<{
     name: string;
     website: string;
@@ -109,7 +108,7 @@ export const subscribeCompetitors = (data: {
     blogUrl?: string;
   }>;
 }) =>
-  request<{ cadence: string; competitors: import("@/types").Competitor[] }>(
+  request<{ competitors: import("@/types").Competitor[] }>(
     "/discover/subscribe",
     { method: "POST", body: JSON.stringify(data) },
   );

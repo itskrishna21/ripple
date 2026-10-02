@@ -28,7 +28,16 @@ import { pool } from "../lib/db";
 export function buildApp() {
   const app = express();
 
-  app.use(cors({ origin: process.env.CORS_ORIGIN ?? "http://localhost:3001", credentials: true }));
+  const corsOrigins = (process.env.CORS_ORIGIN ?? "http://localhost:3001")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  app.use(
+    cors({
+      origin: corsOrigins.length === 1 ? corsOrigins[0] : corsOrigins,
+      credentials: true,
+    }),
+  );
   app.use(express.json());
 
   // Health: process is up (no DB check — load balancer uses this)

@@ -148,7 +148,9 @@ export default function CompetitorDetailPage() {
         <div className="flex flex-col items-center justify-center h-40 text-center">
           <FileText size={28} className="text-zinc-700 mb-3" />
           <p className="text-sm text-zinc-500">No analysis yet</p>
-          <p className="text-xs text-zinc-700 mt-1">Analysis runs automatically each week.</p>
+          <p className="text-xs text-zinc-700 mt-1">
+            Starting photo first — a real diff shows up after the next weekly crawl.
+          </p>
         </div>
       ) : (
         <div className="space-y-6">

@@ -87,7 +87,7 @@ function CompetitorCard({ item }: { item: CompetitorAnalysis }) {
                 </div>
               </>
             ) : (
-              <p className="text-xs text-zinc-600">No analysis yet — runs weekly.</p>
+              <p className="text-xs text-zinc-600">Starting photo — nothing to compare yet.</p>
             )}
           </div>
 

@@ -16,7 +16,6 @@ export async function me(req: Request, res: Response): Promise<void> {
     company: {
       id: company.id,
       name: company.name,
-      digestCadence: company.digestCadence ?? null,
     },
   });
 }

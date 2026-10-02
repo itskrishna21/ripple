@@ -1,14 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { discoverStub } from "../mastra/discover";
 import { deterministicStub } from "../mastra/categorize";
-import { digestStub } from "../mastra/digest";
 import {
   evalCategorizeNoEmptySummary,
   evalCategorizeSchema,
   evalDiscoverHttps,
   evalDiscoverPrecision,
   evalDiscoverSchema,
-  evalDigestGrounded,
   runEvals,
 } from "../mastra/evals";
 
@@ -46,15 +44,5 @@ describe("mastra evals — discover", () => {
         competitors: [{ name: "Y", website: "http://y.com", why: "no" }],
       }).pass,
     ).toBe(false);
-  });
-});
-
-describe("mastra evals — digest", () => {
-  it("stub bullets stay in known categories", () => {
-    const out = digestStub({
-      companyName: "Acme",
-      signals: [{ category: "pricing_change" }],
-    });
-    expect(evalDigestGrounded(out, ["pricing_change"]).pass).toBe(true);
   });
 });

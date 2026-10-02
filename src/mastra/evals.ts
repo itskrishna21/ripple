@@ -3,7 +3,7 @@
  * These are the scoring functions Mastra scorers would wrap in CI.
  */
 import { AnalysisOutputSchema } from "../analysis/agent";
-import { DiscoverOutputSchema, DigestOutputSchema } from "./schemas";
+import { DiscoverOutputSchema } from "./schemas";
 
 export type EvalResult = {
   name: string;
@@ -73,28 +73,6 @@ export function evalDiscoverPrecision(
     name: "discover.precision",
     pass,
     detail: `matched ${hits.length}/${expectedNames.length}`,
-  };
-}
-
-export function evalDigestGrounded(
-  output: unknown,
-  allowedCategories: string[],
-): EvalResult {
-  const parsed = DigestOutputSchema.safeParse(output);
-  if (!parsed.success) {
-    return { name: "digest.grounded", pass: false, detail: "invalid output" };
-  }
-  const allowed = allowedCategories.map((c) => c.toLowerCase());
-  const extra = parsed.data.bullets.filter(
-    (b) =>
-      allowed.length > 0 &&
-      !allowed.some((c) => b.toLowerCase().includes(c)) &&
-      !b.toLowerCase().includes("no competitive"),
-  );
-  return {
-    name: "digest.grounded",
-    pass: extra.length === 0,
-    detail: extra.length === 0 ? "ok" : `ungrounded: ${extra.join(" | ")}`,
   };
 }
 

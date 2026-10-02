@@ -5,7 +5,7 @@ Weekly competitive intel. You pick who to watch. We fetch their pages, diff week
 **UI:** [frontend-lyart-eta-smuth8nxnu.vercel.app](https://frontend-lyart-eta-smuth8nxnu.vercel.app)  
 **API:** [ripple-api-ewgu.onrender.com](https://ripple-api-ewgu.onrender.com)
 
-You can add a competitor by hand. Or use **Find competitors**: it uses the company name from signup, searches the web so we don't mix up homonyms, then a Mastra agent proposes substitutes in the same product category. You tick the ones you want and set weekly or biweekly. That's it. Digest email isn't sending yet — cadence is stored, that's all.
+You can add a competitor by hand. Or use **Find competitors**: company name from signup, web search so we don't mix up homonyms, Mastra proposes substitutes in the same product category. You tick what you want. We take a starting photo immediately, then crawl those URLs every week.
 
 ---
 
@@ -13,10 +13,10 @@ You can add a competitor by hand. Or use **Find competitors**: it uses the compa
 
 1. Sign up with your company name. That's the tenant.
 2. **Find competitors** proposes a list (`POST /discover`), or you paste URLs yourself.
-3. Subscribe writes those rivals and a digest cadence (`POST /discover/subscribe`).
-4. Monday the scheduler fetches pricing / changelog / careers / blog, normalizes HTML, stores a snapshot.
-5. The worker diffs vs last week, Mastra categorizes the changes, we compute a 0–100 threat score.
-6. Dashboard shows it. No LLM key? stubs so local / CI still run.
+3. Subscribe / add writes rivals and enqueues a baseline snapshot (`POST /discover/subscribe` or `POST /competitors`).
+4. Every week the scheduler fetches pricing / changelog / careers / blog again.
+5. The worker diffs vs the previous snapshot, Mastra categorizes, we score 0–100.
+6. Dashboard shows the latest. First crawl is a starting photo (no score). No LLM key? stubs.
 
 ## Stack
 
@@ -25,7 +25,7 @@ You can add a competitor by hand. Or use **Find competitors**: it uses the compa
 | API | Express + TypeScript |
 | Auth | Firebase Auth |
 | Database + queue | PostgreSQL + pg-boss |
-| AI | Mastra agents (categorize, discover, digest draft) + OpenAI |
+| AI | Mastra agents (categorize, discover) + OpenAI |
 | Search | DuckDuckGo HTML, or Serper if you set `SERPER_API_KEY` |
 | Frontend | Next.js, Tailwind, TanStack Query |
 | Deploy | Render (API) + Vercel (UI) |
@@ -62,7 +62,7 @@ PROCESS_TYPE=scheduler npm run dev
 | `LLM_API_KEY` | OpenAI. Empty = stubs |
 | `LLM_MODEL` | Default `gpt-4o-mini` |
 | `SERPER_API_KEY` | Optional Google search via serper.dev |
-| `CORS_ORIGIN` | Frontend origin |
+| `CORS_ORIGIN` | Frontend origin (comma-separated if more than one) |
 
 Don't paste keys in chat. `.env` stays local.
 

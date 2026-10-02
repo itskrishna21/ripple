@@ -60,7 +60,7 @@ export default function AnalysisPage() {
                     {analysis ? (
                       <ThreatBadge score={analysis.threatScore} />
                     ) : (
-                      <span className="text-xs text-zinc-600">No data</span>
+                      <span className="text-xs text-zinc-600">Starting photo</span>
                     )}
                   </td>
                   <td className="px-4 py-3">
