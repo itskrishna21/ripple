@@ -1,4 +1,4 @@
-import type { JobWithMetadata } from "pg-boss";
+import type { Job, JobWithMetadata } from "pg-boss";
 import { config } from "../config";
 import { logger } from "../lib/logger";
 import { FetchSourceJob } from "../queue/jobs";
@@ -38,23 +38,24 @@ function errFields(err: unknown): Record<string, unknown> {
  *   resolves either way.
  *
  * Requires `includeMetadata: true` on the worker registration so retryCount
- * is present (pg-boss 12 omits it from plain Job).
+ * is present at runtime (pg-boss 12 WorkHandler types still expose plain Job).
  */
 export async function handleFetchSource(
-  jobs: JobWithMetadata<FetchSourceJob>[],
+  jobs: Job<FetchSourceJob>[],
 ): Promise<void> {
   for (const job of jobs) {
-    const { snapshotId, competitorId, sourceKey, url } = job.data;
-    const retryCount = job.retryCount ?? 0;
+    const meta = job as JobWithMetadata<FetchSourceJob>;
+    const { snapshotId, competitorId, sourceKey, url } = meta.data;
+    const retryCount = meta.retryCount ?? 0;
     const isFinalAttempt = retryCount >= config.FETCH_RETRY_LIMIT;
 
     const log = logger.child({
-      jobId: job.id,
+      jobId: meta.id,
       snapshotId,
       sourceKey,
       url,
       retryCount,
-      retryLimit: job.retryLimit,
+      retryLimit: meta.retryLimit,
     });
 
     try {
