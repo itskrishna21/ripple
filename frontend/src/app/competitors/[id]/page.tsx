@@ -14,6 +14,7 @@ import {
 import { AppShell } from "@/components/app-shell";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ThreatBadge, Badge } from "@/components/ui/badge";
+import { PageLoading } from "@/components/ui/page-loading";
 import { getCompetitorAnalysis, getCompetitors } from "@/lib/api";
 import type { Signal, SourceKey } from "@/types";
 import { cn } from "@/lib/utils";
@@ -143,7 +144,7 @@ export default function CompetitorDetailPage() {
       </button>
 
       {isLoading ? (
-        <div className="flex items-center justify-center h-40 text-zinc-600 text-sm">Loading…</div>
+        <PageLoading />
       ) : !analysis ? (
         <div className="flex flex-col items-center justify-center h-40 text-center">
           <FileText size={28} className="text-zinc-700 mb-3" />

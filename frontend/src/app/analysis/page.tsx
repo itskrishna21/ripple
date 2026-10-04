@@ -6,6 +6,7 @@ import { BarChart3, ArrowRight } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { Card } from "@/components/ui/card";
 import { ThreatBadge, Badge } from "@/components/ui/badge";
+import { PageLoading } from "@/components/ui/page-loading";
 import { getAllAnalyses } from "@/lib/api";
 
 export default function AnalysisPage() {
@@ -29,7 +30,7 @@ export default function AnalysisPage() {
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center h-40 text-zinc-600 text-sm">Loading…</div>
+        <PageLoading />
       ) : sorted.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-40 text-center">
           <BarChart3 size={28} className="text-zinc-700 mb-3" />
