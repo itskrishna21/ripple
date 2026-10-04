@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { PageLoading } from "@/components/ui/page-loading";
 import {
   getCompetitors,
   createCompetitor,
@@ -181,7 +182,7 @@ export default function CompetitorsPage() {
         <div>
           <h1 className="text-lg font-semibold text-white">Competitors</h1>
           <p className="text-sm text-zinc-500 mt-0.5">
-            {competitors.length} tracked
+            {isLoading ? "…" : `${competitors.length} tracked`}
           </p>
         </div>
         <div className="flex gap-2">
@@ -201,7 +202,7 @@ export default function CompetitorsPage() {
 
       {/* Table */}
       {isLoading ? (
-        <div className="flex items-center justify-center h-40 text-zinc-600 text-sm">Loading…</div>
+        <PageLoading />
       ) : competitors.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-40 text-center">
           <Globe size={28} className="text-zinc-700 mb-3" />

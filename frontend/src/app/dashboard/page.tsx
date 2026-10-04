@@ -6,6 +6,7 @@ import { ArrowRight, Building2, TrendingUp, AlertTriangle, CheckCircle2 } from "
 import { AppShell } from "@/components/app-shell";
 import { Card } from "@/components/ui/card";
 import { ThreatBadge, Badge } from "@/components/ui/badge";
+import { PageLoading } from "@/components/ui/page-loading";
 import { getAllAnalyses } from "@/lib/api";
 import type { CompetitorAnalysis } from "@/types";
 
@@ -136,56 +137,58 @@ export default function DashboardPage() {
         <p className="text-sm text-zinc-500 mt-0.5">Weekly competitive intelligence across your tracked companies.</p>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-8">
-        <StatCard
-          icon={Building2}
-          label="Competitors tracked"
-          value={analyses.length}
-        />
-        <StatCard
-          icon={TrendingUp}
-          label="Avg threat score"
-          value={withAnalysis.length > 0 ? avgScore : "—"}
-          sub={withAnalysis.length > 0 ? "across analyzed competitors" : "no analyses yet"}
-        />
-        <StatCard
-          icon={high > 0 ? AlertTriangle : CheckCircle2}
-          label="High-threat alerts"
-          value={high}
-          sub={high > 0 ? "score ≥ 60 — review soon" : "all clear"}
-        />
-      </div>
-
-      {/* Competitor grid */}
       {isLoading ? (
-        <div className="flex items-center justify-center h-40 text-zinc-600 text-sm">
-          Loading…
-        </div>
+        <PageLoading />
       ) : error ? (
         <div className="flex items-center justify-center h-40 text-red-400 text-sm">
           Failed to load data
         </div>
-      ) : analyses.length === 0 ? (
-        <Card className="flex flex-col items-center justify-center py-16 text-center">
-          <Building2 size={28} className="text-zinc-700 mb-3" />
-          <p className="text-sm font-medium text-zinc-400">No competitors yet</p>
-          <p className="text-xs text-zinc-600 mt-1">
-            Go to Competitors and add your first one.
-          </p>
-          <Link
-            href="/competitors"
-            className="mt-4 text-xs text-white bg-white/10 hover:bg-white/15 transition-colors px-4 py-2 rounded-md"
-          >
-            Add competitor
-          </Link>
-        </Card>
       ) : (
-        <div className="grid grid-cols-2 gap-4">
-          {analyses.map((item) => (
-            <CompetitorCard key={item.competitor.id} item={item} />
-          ))}
-        </div>
+        <>
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-4 mb-8">
+            <StatCard
+              icon={Building2}
+              label="Competitors tracked"
+              value={analyses.length}
+            />
+            <StatCard
+              icon={TrendingUp}
+              label="Avg threat score"
+              value={withAnalysis.length > 0 ? avgScore : "—"}
+              sub={withAnalysis.length > 0 ? "across analyzed competitors" : "no analyses yet"}
+            />
+            <StatCard
+              icon={high > 0 ? AlertTriangle : CheckCircle2}
+              label="High-threat alerts"
+              value={high}
+              sub={high > 0 ? "score ≥ 60 — review soon" : "all clear"}
+            />
+          </div>
+
+          {/* Competitor grid */}
+          {analyses.length === 0 ? (
+            <Card className="flex flex-col items-center justify-center py-16 text-center">
+              <Building2 size={28} className="text-zinc-700 mb-3" />
+              <p className="text-sm font-medium text-zinc-400">No competitors yet</p>
+              <p className="text-xs text-zinc-600 mt-1">
+                Go to Competitors and add your first one.
+              </p>
+              <Link
+                href="/competitors"
+                className="mt-4 text-xs text-white bg-white/10 hover:bg-white/15 transition-colors px-4 py-2 rounded-md"
+              >
+                Add competitor
+              </Link>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-2 gap-4">
+              {analyses.map((item) => (
+                <CompetitorCard key={item.competitor.id} item={item} />
+              ))}
+            </div>
+          )}
+        </>
       )}
     </AppShell>
   );

@@ -5,6 +5,7 @@ import { Activity, Database, Cpu, Clock, AlertCircle, CheckCircle } from "lucide
 import { AppShell } from "@/components/app-shell";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { PageLoading } from "@/components/ui/page-loading";
 import { getReady, getMetrics } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -29,13 +30,21 @@ function StatusDot({ ok }: { ok: boolean }) {
 }
 
 export default function OpsPage() {
-  const { data: ready, error: readyError } = useQuery({
+  const {
+    data: ready,
+    error: readyError,
+    isLoading: readyLoading,
+  } = useQuery({
     queryKey: ["ready"],
     queryFn: getReady,
     refetchInterval: 15_000,
   });
 
-  const { data: metrics, error: metricsError } = useQuery({
+  const {
+    data: metrics,
+    error: metricsError,
+    isLoading: metricsLoading,
+  } = useQuery({
     queryKey: ["metrics"],
     queryFn: getMetrics,
     refetchInterval: 15_000,
@@ -48,6 +57,7 @@ export default function OpsPage() {
   };
 
   const apiDown = !!readyError || !!metricsError;
+  const infraLoading = readyLoading || metricsLoading;
 
   return (
     <AppShell>
@@ -64,6 +74,11 @@ export default function OpsPage() {
           <>
             <AlertCircle size={14} className="text-red-400" />
             <span className="text-sm text-red-400 font-medium">API unreachable</span>
+          </>
+        ) : readyLoading ? (
+          <>
+            <div className="h-3.5 w-3.5 rounded-full border-2 border-zinc-500 border-t-transparent animate-spin" />
+            <span className="text-sm text-zinc-600">Connecting…</span>
           </>
         ) : ready ? (
           <>
@@ -89,16 +104,22 @@ export default function OpsPage() {
               <CardTitle>Infrastructure</CardTitle>
             </div>
           </CardHeader>
-          <MetricRow label="API" value={apiDown ? "unreachable" : "reachable"} />
-          <MetricRow label="Database" value={ready?.db ?? "—"} />
-          <MetricRow
-            label="Stuck snapshots"
-            value={ready?.stuckSnapshots ?? "—"}
-          />
-          {metrics && (
+          {infraLoading && !apiDown ? (
+            <PageLoading className="h-24" />
+          ) : (
             <>
-              <MetricRow label="Memory" value={`${metrics.memoryMb} MB`} />
-              <MetricRow label="Uptime" value={formatUptime(metrics.uptime)} />
+              <MetricRow label="API" value={apiDown ? "unreachable" : "reachable"} />
+              <MetricRow label="Database" value={ready?.db ?? "—"} />
+              <MetricRow
+                label="Stuck snapshots"
+                value={ready?.stuckSnapshots ?? "—"}
+              />
+              {metrics && (
+                <>
+                  <MetricRow label="Memory" value={`${metrics.memoryMb} MB`} />
+                  <MetricRow label="Uptime" value={formatUptime(metrics.uptime)} />
+                </>
+              )}
             </>
           )}
         </Card>
@@ -111,7 +132,9 @@ export default function OpsPage() {
               <CardTitle>Totals</CardTitle>
             </div>
           </CardHeader>
-          {metrics ? (
+          {metricsLoading && !metricsError ? (
+            <PageLoading className="h-24" />
+          ) : metrics ? (
             <>
               <MetricRow label="Competitors" value={metrics.totals.competitors} mono />
               <MetricRow label="Snapshots" value={metrics.totals.snapshots} mono />
@@ -124,7 +147,7 @@ export default function OpsPage() {
               />
             </>
           ) : (
-            <p className="text-xs text-zinc-600">Loading…</p>
+            <p className="text-xs text-zinc-600">Unavailable</p>
           )}
         </Card>
 
@@ -137,7 +160,9 @@ export default function OpsPage() {
               <CardDescription>Jobs waiting to be processed</CardDescription>
             </div>
           </CardHeader>
-          {ready?.queueDepths && Object.keys(ready.queueDepths).length > 0 ? (
+          {readyLoading && !readyError ? (
+            <PageLoading className="h-24" />
+          ) : ready?.queueDepths && Object.keys(ready.queueDepths).length > 0 ? (
             Object.entries(ready.queueDepths)
               .sort(([, a], [, b]) => b - a)
               .map(([queue, count]) => (
@@ -166,7 +191,9 @@ export default function OpsPage() {
               <CardTitle>Snapshot Pipeline (24h)</CardTitle>
             </div>
           </CardHeader>
-          {ready?.snapshots24h && Object.keys(ready.snapshots24h).length > 0 ? (
+          {(readyLoading || metricsLoading) && !apiDown ? (
+            <PageLoading className="h-24" />
+          ) : ready?.snapshots24h && Object.keys(ready.snapshots24h).length > 0 ? (
             Object.entries(ready.snapshots24h).map(([status, count]) => (
               <div key={status} className="flex items-center justify-between py-2.5 border-b border-white/8 last:border-0">
                 <div className="flex items-center gap-2">
